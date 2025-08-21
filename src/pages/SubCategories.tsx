@@ -1,8 +1,11 @@
-// import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import PageMeta from "../components/common/PageMeta";
-import ProductComponents from "../components/Products/Products";
 
-export default function Products() {
+// import PageBreadcrumb from "../components/common/PageBreadCrumb";
+
+
+import PageMeta from "../components/common/PageMeta";
+import SubcategoryComponents from "../components/subCategories/subCategories";
+
+export default function Categories() {
   return (
     <>
       <PageMeta
@@ -16,7 +19,7 @@ export default function Products() {
         </h3> */}
         <div className="space-y-6">
 
-            <ProductComponents />
+            <SubcategoryComponents />
 
 
         </div>

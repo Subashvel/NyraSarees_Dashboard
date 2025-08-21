@@ -2,11 +2,11 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import PageMeta from "../../components/common/PageMeta";
 import BasicTableOne from "../../components/tables/BasicTables/BasicTableOne";
-import BannerTable from "../../components/tables/BasicTables/BannerTable";
-import UserTable from "../../components/tables/BasicTables/UserTable";
-import CategoryTable from "../../components/tables/BasicTables/CategoryTable";
-import ProductTable from "../../components/tables/BasicTables/ProductTable";
-import ProductVariant from "../../components/tables/BasicTables/ProductVariant";
+// import BannerTable from "../../components/tables/BasicTables/BannerTable";
+// import UserTable from "../../components/tables/BasicTables/UserTable";
+// import CategoryTable from "../../components/tables/BasicTables/CategoryTable";
+// import ProductTable from "../../components/tables/BasicTables/ProductTable";
+// import ProductVariant from "../../components/tables/BasicTables/ProductVariant";
 
 export default function BasicTables() {
   return (
@@ -19,11 +19,11 @@ export default function BasicTables() {
       <div className="space-y-6 overflow-y: auto">
         <ComponentCard title="Basic Table 1">
           <BasicTableOne />
-          <BannerTable />
-          <UserTable />
-          <CategoryTable />
-          <ProductTable />
-          <ProductVariant />
+          {/* <BannerTable /> */}
+          {/* <UserTable /> */}
+          {/* <CategoryTable /> */}
+          {/* <ProductTable /> */}
+          {/* <ProductVariant /> */}
         </ComponentCard>
       </div>
     </>

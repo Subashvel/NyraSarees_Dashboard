@@ -282,7 +282,7 @@ import {
   createCategory,
   deleteCategory,
   updateCategory,
-} from "../../../api/categoryApi";
+} from "../../../api/CategoryApi";
 
 interface CategoryItem {
   id: number;

@@ -21,15 +21,16 @@ import Home from "./pages/Dashboard/Home";
 import ForgotPassword from "./pages/AuthPages/ForgotPassword";
 import Product from "./pages/Products";
 import BasicTableOne from "./components/tables/BasicTables/BasicTableOne";
-import BannerTable from "./components/tables/BasicTables/BannerTable";
-import UserTable from "./components/tables/BasicTables/UserTable";
-import CategoryTable from "./components/tables/BasicTables/CategoryTable";
-import ProductTable from "./components/tables/BasicTables/ProductTable";
-import ProductVariant from "./components/tables/BasicTables/ProductVariant";
+// import BannerTable from "./components/tables/BasicTables/BannerTable";
+// import UserTable from "./components/tables/BasicTables/UserTable";
+// import CategoryTable from "./components/tables/BasicTables/CategoryTable";
+// import ProductTable from "./components/tables/BasicTables/ProductTable";
+// import ProductVariant from "./components/tables/BasicTables/ProductVariant";
 import Categories from "./pages/Categories";
 import Products from "./pages/Products";
 import Variants from "./pages/Variants";
 import Homebanner from "./pages/Homebanner";
+import SubCategories from "./pages/SubCategories";
 
 export default function App() {
   return (
@@ -53,11 +54,11 @@ export default function App() {
             {/* Tables */}
             <Route path="/basic-tables" element={<BasicTables />} />
             <Route path="/basic-table-one" element={<BasicTableOne />} />
-            <Route path="/banner-table" element={<BannerTable />} />
-            <Route path="/user-table" element={<UserTable />} />
-            <Route path="/category-table" element={<CategoryTable />} />
-            <Route path="/product-table" element={<ProductTable />} />
-            <Route path="/product-variant" element={<ProductVariant />} />
+            {/* <Route path="/banner-table" element={<BannerTable />} /> */}
+            {/* <Route path="/user-table" element={<UserTable />} /> */}
+            {/* <Route path="/category-table" element={<CategoryTable />} /> */}
+            {/* <Route path="/product-table" element={<ProductTable />} /> */}
+            {/* <Route path="/product-variant" element={<ProductVariant />} /> */}
 
             {/* Ui Elements */}
             <Route path="/alerts" element={<Alerts />} />
@@ -75,6 +76,7 @@ export default function App() {
 
             <Route path="/products" element={<Products />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/subcategories" element={<SubCategories />} />
             <Route path="/variants" element={<Variants />} />
             <Route path="/homebanner" element={<Homebanner />} />
 

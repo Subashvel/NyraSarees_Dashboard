@@ -2,43 +2,63 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} from "./categoryApi";
+  getSubCategories,
+  createSubCategory,
+  updateSubCategory,
+  deleteSubCategory,
+} from "./subCategoryApi";
+import { getCategories } from "../categories/categoryApi";
+
+interface SubCategoryItem {
+  subCategoryId: number;
+  subCategoryName: string;
+  categoryId: number; // ✅ added so we can show category name
+  updatedAt: string;
+}
 
 interface CategoryItem {
   categoryId: number;
   categoryName: string;
-  // createdAt: string;
-  updatedAt: string;
 }
 
-export default function CategoryComponents() {
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+export default function SubCategoryComponents() {
+  const [SubCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(
+  const [editingSubcategory, setEditingSubcategory] =
+    useState<SubCategoryItem | null>(null);
+  const [subCategoryName, setSubCategoryName] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
-  const [categoryName, setCategoryName] = useState("");
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   useEffect(() => {
+    fetchSubCategories();
     fetchCategories();
   }, []);
 
   const fetchCategories = async () => {
     try {
-      setLoading(true);
       const json = await getCategories();
       if (json.success && Array.isArray(json.data)) {
         setCategories(json.data);
-      } else {
-        setCategories([]);
       }
     } catch (err) {
-      // toast.error("Failed to load categories");
+      console.error("Failed to load categories", err);
+    }
+  };
+
+  const fetchSubCategories = async () => {
+    try {
+      setLoading(true);
+      const json = await getSubCategories();
+      if (json.success && Array.isArray(json.data)) {
+        setSubCategories(json.data);
+      } else {
+        setSubCategories([]);
+      }
+    } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
@@ -46,8 +66,9 @@ export default function CategoryComponents() {
   };
 
   const resetForm = () => {
-    setCategoryName("");
-    setEditingCategory(null);
+    setSubCategoryName("");
+    setSelectedCategoryId(null);
+    setEditingSubcategory(null);
   };
 
   const openAddModal = () => {
@@ -55,35 +76,42 @@ export default function CategoryComponents() {
     setShowModal(true);
   };
 
-  const openEditModal = (cat: CategoryItem) => {
-    setEditingCategory(cat);
-    setCategoryName(cat.categoryName);
+  const openEditModal = (subcat: SubCategoryItem) => {
+    setEditingSubcategory(subcat);
+    setSubCategoryName(subcat.subCategoryName);
+    setSelectedCategoryId(subcat.categoryId); // ✅ pre-fill category
     setShowModal(true);
   };
 
   const handleSubmit = async () => {
-    if (!categoryName.trim()) {
-      toast.error("Category name is required");
+    if (!subCategoryName.trim()) {
+      toast.error("Subcategory name is required");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("categoryName", categoryName);
+    if (!selectedCategoryId) {
+      toast.error("Please select a category");
+      return;
+    }
 
     try {
-      if (editingCategory) {
-        await updateCategory(editingCategory.categoryId, categoryName);
-        toast.success("Category updated successfully!");
+      if (editingSubcategory) {
+        await updateSubCategory(
+          editingSubcategory.subCategoryId,
+          selectedCategoryId,
+          subCategoryName
+        );
+        toast.success("Subcategory updated successfully!");
       } else {
-        await createCategory(categoryName);
-        toast.success("Category added successfully!");
+        await createSubCategory(selectedCategoryId, subCategoryName);
+        toast.success("Subcategory added successfully!");
       }
 
       setShowModal(false);
       resetForm();
-      fetchCategories();
+      fetchSubCategories();
     } catch (err) {
-      toast.error("Failed to save category");
+      toast.error("Failed to save subcategory");
       console.error(err);
     }
   };
@@ -91,16 +119,16 @@ export default function CategoryComponents() {
   const handleDelete = (id: number) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "This will permanently delete the category.",
+      text: "This will permanently delete the subcategory.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteCategory(id);
-          toast.success("Category deleted successfully!");
-          fetchCategories();
+          await deleteSubCategory(id);
+          toast.success("Subcategory deleted successfully!");
+          fetchSubCategories();
         } catch {
           toast.error("Failed to delete");
         }
@@ -112,12 +140,12 @@ export default function CategoryComponents() {
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Categories</h2>
+        <h2 className="text-xl font-semibold">Subcategories</h2>
         <button
           onClick={openAddModal}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
         >
-          + Add Category
+          + Add Subcategory
         </button>
       </div>
 
@@ -128,7 +156,7 @@ export default function CategoryComponents() {
             <tr>
               <th className="px-4 py-2">S.NO</th>
               <th className="px-4 py-2">Category Name</th>
-              {/* <th className="px-4 py-2">Created At</th> */}
+              <th className="px-4 py-2">Subcategory Name</th>
               <th className="px-4 py-2">Action</th>
             </tr>
           </thead>
@@ -139,30 +167,32 @@ export default function CategoryComponents() {
                   Loading...
                 </td>
               </tr>
-            ) : categories.length === 0 ? (
+            ) : SubCategories.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-center">
-                  No categories found.
+                  No subcategories found.
                 </td>
               </tr>
             ) : (
-              categories.map((cat, index) => (
-                <tr key={cat.categoryId} className="border-b">
+              SubCategories.map((subcat, index) => (
+                <tr key={subcat.subCategoryId} className="border-b">
                   <td className="px-4 py-2">{index + 1}</td>
-                  <td className="px-4 py-2">{cat.categoryName}</td>
-                  {/* <td className="px-4 py-2">
-                    {new Date(cat.createdAt).toLocaleString()}
-                  </td> */}
+                  <td className="px-4 py-2">
+                    {categories.find(
+                      (c) => c.categoryId === subcat.categoryId
+                    )?.categoryName || "Unknown"}
+                  </td>
+                  <td className="px-4 py-2">{subcat.subCategoryName}</td>
                   <td className="px-4 py-2">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => openEditModal(cat)}
+                        onClick={() => openEditModal(subcat)}
                         className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(cat.categoryId)}
+                        onClick={() => handleDelete(subcat.subCategoryId)}
                         className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                       >
                         Delete
@@ -188,14 +218,32 @@ export default function CategoryComponents() {
             </button>
 
             <h2 className="text-lg font-semibold mb-4">
-              {editingCategory ? "Edit Category" : "Add Category"}
+              {editingSubcategory ? "Edit Subcategory" : "Add Subcategory"}
             </h2>
 
             <label className="block mb-1 text-sm">Category Name</label>
+            <select
+              value={selectedCategoryId !== null ? selectedCategoryId : ""}
+              onChange={(e) =>
+                setSelectedCategoryId(
+                  e.target.value === "" ? null : Number(e.target.value)
+                )
+              }
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+            >
+              <option value="">-- Select Category --</option>
+              {categories.map((cat) => (
+                <option key={cat.categoryId} value={cat.categoryId}>
+                  {cat.categoryName}
+                </option>
+              ))}
+            </select>
+
+            <label className="block mb-1 text-sm">Subcategory Name</label>
             <input
               type="text"
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
+              value={subCategoryName}
+              onChange={(e) => setSubCategoryName(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
             />
 
@@ -204,7 +252,7 @@ export default function CategoryComponents() {
                 onClick={handleSubmit}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
               >
-                {editingCategory ? "Update" : "Submit"}
+                {editingSubcategory ? "Update" : "Submit"}
               </button>
             </div>
           </div>

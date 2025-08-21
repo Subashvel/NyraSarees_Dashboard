@@ -12,9 +12,10 @@ import {
   // PageIcon,
   PieChartIcon,
   PlugInIcon,
-  // TableIcon,
+  TableIcon,
   // UserCircleIcon,
   ProdIcon,
+  
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 // import SidebarWidget from "./SidebarWidget";
@@ -38,27 +39,27 @@ const navItems: NavItem[] = [
   //   path: "/product",
   // },
 
-  {
-    icon: <CalenderIcon />,
-    name: "Home Banner",
-    path: "/homebanner",
-  },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Home Banner",
+  //   path: ",
+  // },
 
-  {
-    icon: <CalenderIcon />,
-    name: "Categories",
-    path: "/categories",
-  },
-  {
-    icon: <CalenderIcon />,
-    name: "Products",
-    path: "/Products",
-  },
-     {
-    icon: <CalenderIcon />,
-    name: "Variants",
-    path: "/Variants",
-  },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Categories",
+  //   path: "/categories",
+  // },
+  // {
+  //   icon: <CalenderIcon />,
+  //   name: "Products",
+  //   path: "/Products",
+  // },
+  //    {
+  //   icon: <CalenderIcon />,
+  //   name: "Variants",
+  //   path: "/Variants",
+  // },
   // {
   //   icon: <CalenderIcon />,
   //   name: "Calendar",
@@ -124,7 +125,7 @@ const bannerItems: NavItem[] = [
   {
     icon: <ProdIcon />,
     name: "Banner Images",
-    path: "/banner-table",
+    path: "/homebanner",
   },
 ];
 
@@ -140,22 +141,27 @@ const productItems: NavItem[] = [
   {
     icon: <ProdIcon />,
     name: "Category",
-    path: "/category-table",
+    path: "/categories",
+  },
+  {
+    icon: <ProdIcon />,
+    name: "Sub Category",
+    path: "/subcategories",
   },
   {
     icon: <ProdIcon />,
     name: "Products",
-    path: "/product-table",
+    path: "/products",
   },
   {
     icon: <ProdIcon />,
     name: "Product Variant",
-    path: "/product-variant",
+    path: "/Variants",
   },
   {
     icon: <ProdIcon />,
     name: "Product Stock",
-    path: "/products",
+    path: "/product",
   },
 ];
 
