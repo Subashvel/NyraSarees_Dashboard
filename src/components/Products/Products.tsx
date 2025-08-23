@@ -9,7 +9,7 @@ import {
 } from "./productApi";
 import { getSubCategories } from "../subCategories/subCategoryApi";
 import { getCategories } from "../categories/categoryApi";
-
+import { createProductVariant } from "../ProductVariant/productVariantApi";
 interface ProductItem {
   productId: number;
   productName: string;
@@ -33,9 +33,17 @@ interface CategoryItem {
   categoryName: string;
 }
 
-const imageBaseUrl =
-  import.meta.env.VITE_IMAGE_BASE_URL ||
-  "http://localhost:5000/uploads/products/{productImage}";
+interface VariantForm {
+  productColor: string;
+  stockQuantity: string;
+  lowStock: string;
+  thumbImage1: File | null;
+  thumbImage2: File | null;
+  thumbImage3: File | null;
+  thumbImage4: File | null;
+}
+
+const imageBaseUrl = `http://localhost:5000/uploads/`;
 
 export default function ProductComponents() {
   const [products, setProducts] = useState<ProductItem[]>([]);
@@ -46,7 +54,7 @@ export default function ProductComponents() {
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(
     null
   );
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImage, setProductImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -61,35 +69,50 @@ export default function ProductComponents() {
     categoryId: "",
   });
 
+  const [variants, setVariants] = useState<any[]>([]);
+  const [variantForm, setVariantForm] = useState<VariantForm>({
+    productColor: "",
+    stockQuantity: "",
+    lowStock: "",
+    thumbImage1: null,
+    thumbImage2: null,
+    thumbImage3: null,
+    thumbImage4: null,
+  });
+
   useEffect(() => {
-    fetchProducts();
-    fetchSubCategories();
-    fetchCategories();
+    const loadData = async () => {
+      await fetchCategories();
+      await fetchSubCategories();
+      await fetchProducts();
+    };
+    loadData();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchCategories = async () => {
     try {
-      setLoading(true);
-      const json = await getProducts();
+      const json = await getCategories();
       if (json.success && Array.isArray(json.data)) {
-        const updated = json.data.map((p: ProductItem) => ({
-          ...p,
-          categoryId: Number(p.categoryId),
-          subCategoryId: Number(p.subCategoryId),
-          productImage: p.productImage?.startsWith("http")
-  ? p.productImage
-  : `${imageBaseUrl}${p.productImage}`,
-        }));
-        setProducts(updated);
-      } else {
-        setProducts([]);
+        setCategories(json.data);
       }
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      console.error("Failed to load subcategories", err);
     }
   };
+  //   try {
+  //     const json = await getCategories();
+  //     if (json.success && Array.isArray(json.data)) {
+  //       setCategories(
+  //         json.data.map((c: CategoryItem) => ({
+  //           ...c,
+  //           categoryId: Number(c.categoryId),
+  //         }))
+  //       );
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to load categories", err);
+  //   }
+  // };
 
   const fetchSubCategories = async () => {
     try {
@@ -102,19 +125,28 @@ export default function ProductComponents() {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchProducts = async () => {
     try {
-      const json = await getCategories();
+      setLoading(true);
+      const json = await getProducts();
       if (json.success && Array.isArray(json.data)) {
-        setCategories(
-          json.data.map((c: CategoryItem) => ({
-            ...c,
-            categoryId: Number(c.categoryId),
-          }))
-        );
+        const updated = json.data.map((p: ProductItem) => ({
+          ...p,
+          categoryId: Number(p.categoryId),
+          subCategoryId: Number(p.subCategoryId),
+
+          productImage: p.productImage?.startsWith("http")
+            ? p.productImage
+            : `${imageBaseUrl}${p.productImage}`,
+        }));
+        setProducts(updated);
+      } else {
+        setProducts([]);
       }
     } catch (err) {
-      console.error("Failed to load categories", err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,9 +162,10 @@ export default function ProductComponents() {
       subCategoryId: "",
       categoryId: "",
     });
-    setProductImageFile(null);
+    setProductImage(null);
     setImagePreview(null);
     setEditingProduct(null);
+    setVariants([]);
   };
 
   const openAddModal = () => {
@@ -140,7 +173,7 @@ export default function ProductComponents() {
     setShowModal(true);
   };
 
-  const openEditModal = (product: ProductItem) => {
+  const handleEdit = (product: ProductItem) => {
     setEditingProduct(product);
     setForm({
       ...product,
@@ -149,6 +182,13 @@ export default function ProductComponents() {
       subCategoryId: String(product.subCategoryId),
       categoryId: String(product.categoryId),
     });
+
+    setProductImage(null);
+
+    // Show existing product image in preview
+    setImagePreview(product.productImage || null);
+    setProductImage(null);
+
     setShowModal(true);
   };
 
@@ -165,22 +205,51 @@ export default function ProductComponents() {
       toast.error("Product name, Category and Subcategory are required");
       return;
     }
-
+  
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => formData.append(key, value));
-
-    if (productImageFile) {
-      formData.append("productImage", productImageFile);
+  
+    if (productImage) {
+      formData.append("productImage", productImage);
     }
-
+  
     try {
+      let productResponse;
       if (editingProduct) {
-        await updateProduct(editingProduct.productId, formData);
+        productResponse = await updateProduct(editingProduct.productId, formData);
         toast.success("Product updated successfully!");
       } else {
-        await createProduct(formData);
-        toast.success("Product added successfully!");
+        productResponse = await createProduct(formData);
+        toast.success("Product created successfully!");
       }
+  
+      // Get productId for variants
+      const productId =
+        editingProduct?.productId || productResponse?.data?.productId;
+  
+      if (!productId) {
+        toast.error("Product ID missing. Variants cannot be saved.");
+        return;
+      }
+  
+      // Save Variants
+      for (const variant of variants) {
+        const variantData = new FormData();
+        variantData.append("productId", productId.toString());
+        variantData.append("productColor", variant.productColor);
+        variantData.append("stockQuantity", variant.stockQuantity || "0");
+        variantData.append("lowStock", variant.lowStock || "0");
+  
+        [1, 2, 3, 4].forEach((i) => {
+          if (variant[`thumbImage${i}`] instanceof File) {
+            variantData.append(`thumbImage${i}`, variant[`thumbImage${i}`]);
+          }
+        });
+  
+        await createProductVariant(variantData);
+      }
+  
+      toast.success("All variants saved successfully!");
       setShowModal(false);
       resetForm();
       fetchProducts();
@@ -189,6 +258,7 @@ export default function ProductComponents() {
       console.error(err);
     }
   };
+  
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -212,12 +282,15 @@ export default function ProductComponents() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    setProductImageFile(file);
+    setProductImage(file);
     if (file) setImagePreview(URL.createObjectURL(file));
   };
 
   return (
-    <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
+    <div
+      className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6"
+      style={{ width: "fit-content" }}
+    >
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold">Products</h2>
@@ -285,7 +358,7 @@ export default function ProductComponents() {
                   <td className="px-4 py-2">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => openEditModal(p)}
+                        onClick={() => handleEdit(p)}
                         className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                       >
                         Edit
@@ -414,6 +487,109 @@ export default function ProductComponents() {
                 className="w-10 mt-2 rounded"
               />
             )}
+
+            <h3 className="text-lg font-semibold mb-4 mt-10">
+              Add Product Variants
+            </h3>
+
+            {/* Variant Fields */}
+            <input
+              type="text"
+              placeholder="Color"
+              value={variantForm.productColor}
+              onChange={(e) =>
+                setVariantForm({ ...variantForm, productColor: e.target.value })
+              }
+              className="w-full border rounded px-3 py-2 mb-3"
+            />
+
+            <input
+              type="number"
+              placeholder="Stock Quantity"
+              value={variantForm.stockQuantity}
+              onChange={(e) =>
+                setVariantForm({
+                  ...variantForm,
+                  stockQuantity: e.target.value,
+                })
+              }
+              className="w-full border rounded px-3 py-2 mb-3"
+            />
+
+            <input
+              type="number"
+              placeholder="Low Stock"
+              value={variantForm.lowStock}
+              onChange={(e) =>
+                setVariantForm({ ...variantForm, lowStock: e.target.value })
+              }
+              className="w-full border rounded px-3 py-2 mb-3"
+            />
+
+            {/* Variant Images */}
+            <label className="block mb-2">Variant Images</label>
+            {[1, 2, 3, 4].map((i) => (
+              <input
+                key={i}
+                type="file"
+                onChange={(e) =>
+                  setVariantForm({
+                    ...variantForm,
+                    [`thumbImage${i}`]: e.target.files?.[0] || null,
+                  })
+                }
+                className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
+              />
+            ))}
+
+            {/* Add Variant Button */}
+            <button
+  type="button"
+  onClick={async () => {
+    try {
+      if (!editingProduct?.productId) {
+        toast.error("Please save the product first before adding variants.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("productId", editingProduct.productId.toString());
+      formData.append("productColor", variantForm.productColor);
+      formData.append("stockQuantity", variantForm.stockQuantity || "0");
+      formData.append("lowStock", variantForm.lowStock || "0");
+
+      [1, 2, 3, 4].forEach((i) => {
+        const key = `thumbImage${i}` as keyof VariantForm;
+        if (variantForm[key] instanceof File) {
+          formData.append(key, variantForm[key] as File);
+        }
+      });
+
+      await createProductVariant(formData);
+      toast.success("Variant saved successfully!");
+
+      setVariants((prev) => [...prev, { ...variantForm }]);
+
+      setVariantForm({
+        productColor: "",
+        stockQuantity: "",
+        lowStock: "",
+        thumbImage1: null,
+        thumbImage2: null,
+        thumbImage3: null,
+        thumbImage4: null,
+      });
+    } catch (err) {
+      toast.error("Failed to save variant");
+      console.error(err);
+    }
+  }}
+  className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+>
+  + Add Variant
+</button>
+
+
 
             <div className="mt-4 flex justify-center">
               <button

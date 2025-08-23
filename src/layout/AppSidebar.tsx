@@ -156,7 +156,7 @@ const productItems: NavItem[] = [
   {
     icon: <ProdIcon />,
     name: "Product Variant",
-    path: "/Variants",
+    path: "/product-variants",
   },
   {
     icon: <ProdIcon />,

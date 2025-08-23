@@ -31,6 +31,7 @@ import Products from "./pages/Products";
 import Variants from "./pages/Variants";
 import Homebanner from "./pages/Homebanner";
 import SubCategories from "./pages/SubCategories";
+import ProductVariant from "./pages/ProductVariant";
 
 export default function App() {
   return (
@@ -79,6 +80,7 @@ export default function App() {
             <Route path="/subcategories" element={<SubCategories />} />
             <Route path="/variants" element={<Variants />} />
             <Route path="/homebanner" element={<Homebanner />} />
+            <Route path="/product-variants" element={<ProductVariant />} />
 
           </Route>
 
