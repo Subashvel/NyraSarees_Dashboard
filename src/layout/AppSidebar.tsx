@@ -133,7 +133,7 @@ const customerItems: NavItem[] = [
   {
     icon: <ProdIcon />,
     name: "Customers",
-    path: "/user-table",
+    path: "/customers",
   },
 ];
 

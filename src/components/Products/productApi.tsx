@@ -11,27 +11,10 @@ export const getSubCategories = async () => {
   return res.data;
 };
 
-// export const getProductVariants = async () => {
-//   const res = await axios.get('http://localhost:5000/api/product-variants');
-//   return res.data;
-// };
-
-
 export const getProducts = async () => {
   const res = await axios.get(BASE_URL);
   return res.data;
 };
-
-
-
-// export const createProduct = async (productData: FormData) => {
-//   const res = await fetch(BASE_URL, {
-//     method: "POST",
-//     body: productData, // remove JSON.stringify
-//   });
-//   if (!res.ok) throw new Error("Failed to create product");
-//   return res.json();
-// };
 
 export const createProduct = async (formData: FormData) => {
   const res = await axios.post(BASE_URL, formData, {
@@ -50,7 +33,6 @@ export const updateProduct = async (id: number | string, formData: FormData) => 
   });
   return res.data;
 };
-
 
 export const deleteProduct = async (id: number | string) => {
   const res = await axios.delete(`${BASE_URL}/${id}`);

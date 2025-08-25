@@ -1,13 +1,9 @@
-
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
-
-
 import PageMeta from "../components/common/PageMeta";
-import ProductVariants from "../components/ProductVariant/ProductVariants";
+import CustomerTable from "../components/customer/customer";
 
 
-
-export default function ProductVariant() {
+export default function Products() {
   return (
     <>
       <PageMeta
@@ -21,7 +17,7 @@ export default function ProductVariant() {
         </h3> */}
         <div className="space-y-6">
 
-            <ProductVariants />
+            <CustomerTable />
 
 
         </div>

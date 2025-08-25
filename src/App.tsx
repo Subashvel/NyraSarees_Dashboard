@@ -32,6 +32,7 @@ import Variants from "./pages/Variants";
 import Homebanner from "./pages/Homebanner";
 import SubCategories from "./pages/SubCategories";
 import ProductVariant from "./pages/ProductVariant";
+import CustomerTable from "./components/customer/customer";
 
 export default function App() {
   return (
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/variants" element={<Variants />} />
             <Route path="/homebanner" element={<Homebanner />} />
             <Route path="/product-variants" element={<ProductVariant />} />
+            <Route path="/customers" element={<CustomerTable />} />
 
           </Route>
 

@@ -31,22 +31,26 @@ interface ProductItem {
 }
 
 interface ProductVariantItem {
-  productVariantId: number;
+  productVariantId: number; 
   productId: number;
+  variantId: number;
   productColor: string;
-  stockQuantity: number;
-  lowStock: number;
+  stockQuantity: string;
+  lowStock: string;
   thumbImage1?: string;
   thumbImage2?: string;
   thumbImage3?: string;
   thumbImage4?: string;
   Product?: {
-    productId: number;
     productName: string;
-    categoryId: number;
-    subCategoryId: number;
-    Category?: CategoryItem;
-    SubCategory?: SubCategoryItem;
+    categoryId?: number; 
+    subCategoryId?: number; 
+    SubCategory?: {
+      subCategoryName: string;
+      Category?: {
+        categoryName: string;
+      };
+    };
   };
 }
 
@@ -61,46 +65,18 @@ export default function ProductVariants() {
   const [previews, setPreviews] = useState<{ [key: string]: string }>({});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
-  
+  const [loading, setLoading] = useState(false);
 
   // --- Fetch Data ---
   useEffect(() => {
-    fetchVariants();
-    fetchCategories();
-    fetchSubCategories();
-    fetchProducts();
+    const loadData = async () => {
+      await fetchCategories();
+      await fetchSubCategories();
+      await fetchProducts();
+      await fetchVariants();
+    };
+    loadData();
   }, []);
-
-  const fetchVariants = async () => {
-    try {
-      const json = await getProductVariants();
-      if (json.success && Array.isArray(json.data)) {
-        // Ensure image URLs are properly prefixed (if needed)
-        const updated = json.data.map((variant: ProductVariantItem) => ({
-          ...variant,
-          thumbImage1: variant.thumbImage1?.startsWith("http")
-            ? variant.thumbImage1
-            : `${imageBaseUrl}${variant.thumbImage1}`,
-          thumbImage2: variant.thumbImage2?.startsWith("http")
-            ? variant.thumbImage2
-            : `${imageBaseUrl}${variant.thumbImage2}`,
-          thumbImage3: variant.thumbImage3?.startsWith("http")
-            ? variant.thumbImage3
-            : `${imageBaseUrl}${variant.thumbImage3}`,
-          thumbImage4: variant.thumbImage4?.startsWith("http")
-            ? variant.thumbImage4
-            : `${imageBaseUrl}${variant.thumbImage4}`,
-        }));
-  
-        setVariants(updated);
-      } else {
-        setVariants([]);
-      }
-    } catch (error) {
-      console.error("Error fetching product variants:", error);
-      toast.error("Failed to fetch product variants");
-    }
-  };
 
   const fetchCategories = async () => {
     try {
@@ -126,12 +102,74 @@ export default function ProductVariants() {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
       const json = await getProducts();
       if (json.success && Array.isArray(json.data)) {
-        setProducts(json.data);
+        const updated = json.data.map((p: ProductItem) => ({
+          ...p,
+          categoryId: Number(p.categoryId),
+          subCategoryId: Number(p.subCategoryId),
+        }));
+        setProducts(updated);
+      } else {
+        setProducts([]);
       }
     } catch (err) {
       console.error("Failed to load products", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVariants = async () => {
+    try {
+      const json = await getProductVariants();
+
+      if (json.success && Array.isArray(json.data)) {
+        // Map variants AFTER categories, subCategories, and products are loaded
+        const updated = json.data.map((variant: ProductVariantItem) => {
+          const product = products.find(
+            (p) => p.productId === variant.productId
+          );
+
+          const categoryName = product
+            ? categories.find((c) => c.categoryId === product.categoryId)
+                ?.categoryName || "-"
+            : "-";
+
+          const subCategoryName = product
+            ? subCategories.find(
+                (s) => s.subCategoryId === product.subCategoryId
+              )?.subCategoryName || "-"
+            : "-";
+
+          return {
+            ...variant,
+            thumbImage1: variant.thumbImage1
+              ? `${imageBaseUrl}${variant.thumbImage1}`
+              : undefined,
+            thumbImage2: variant.thumbImage2
+              ? `${imageBaseUrl}${variant.thumbImage2}`
+              : undefined,
+            thumbImage3: variant.thumbImage3
+              ? `${imageBaseUrl}${variant.thumbImage3}`
+              : undefined,
+            thumbImage4: variant.thumbImage4
+              ? `${imageBaseUrl}${variant.thumbImage4}`
+              : undefined,
+            categoryName,
+            subCategoryName,
+            productName: product?.productName || "-",
+          };
+        });
+
+        setVariants(updated);
+      } else {
+        setVariants([]);
+      }
+    } catch (error) {
+      console.error("Error fetching product variants:", error);
+      toast.error("Failed to fetch product variants");
     }
   };
 
@@ -163,36 +201,9 @@ export default function ProductVariants() {
     }
   };
 
-  // --- Submit ---
-  // const handleSubmit = async () => {
-  //   try {
-  //     const formData = new FormData();
-  //     Object.entries(form).forEach(([k, v]) => {
-  //       if (v instanceof File) {
-  //         formData.append(k, v);
-  //       } else if (v !== null && v !== undefined && v !== "") {
-  //         formData.append(k, v.toString());
-  //       }
-  //     });
-
-  //     if (editingId) {
-  //       await updateProductVariant(editingId, formData);
-  //       toast.success("Variant updated");
-  //     } else {
-  //       await createProductVariant(formData);
-  //       toast.success("Variant created");
-  //     }
-  //     resetForm();
-  //     fetchVariants();
-  //   } catch (err) {
-  //     console.error("Error submitting form", err);
-  //     toast.error("Failed to save variant");
-  //   }
-  // };
-
   const handleSubmit = async () => {
     try {
-      // Validate required fields
+      
       if (!form.productId) {
         toast.error("Please select a product");
         return;
@@ -208,7 +219,7 @@ export default function ProductVariants() {
       formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
       formData.append("lowStock", form.lowStock?.toString() || "0");
 
-      // Only add image files (skip URL strings)
+      
       [1, 2, 3, 4].forEach((i) => {
         const key = `thumbImage${i}`;
         const value = form[key];
@@ -272,7 +283,7 @@ export default function ProductVariants() {
       thumbImage3: null,
       thumbImage4: null,
     });
-  
+
     // Directly set preview URLs
     setPreviews({
       thumbImage1: variant.thumbImage1 || "",
@@ -280,11 +291,10 @@ export default function ProductVariants() {
       thumbImage3: variant.thumbImage3 || "",
       thumbImage4: variant.thumbImage4 || "",
     });
-  
+
     setEditingId(variant.productVariantId);
     setShowModal(true);
   };
-  
 
   return (
     <div className="p-5 border rounded-2xl">
@@ -304,14 +314,14 @@ export default function ProductVariants() {
 
       {/* Table */}
       <table className="min-w-full text-sm text-left">
-      <thead className="bg-gray-100 border-b border-gray-200">
+        <thead className="bg-gray-100 border-b border-gray-200">
           <tr>
             <th className="px-4 py-2">S.No</th>
-            <th className="px-4 py-2">Category</th>
-            <th className="px-4 py-2">SubCategory</th>
-            <th className="px-4 py-2">Product</th>
-            <th className="px-4 py-2">Color</th>
-            <th className="px-4 py-2">Stock</th>
+            <th className="px-4 py-2">Category Name</th>
+            <th className="px-4 py-2">SubCategory Name</th>
+            <th className="px-4 py-2">Product Name</th>
+            <th className="px-4 py-2">Product Color</th>
+            <th className="px-4 py-2">Total Stock</th>
             <th className="px-4 py-2">Low Stock</th>
             <th className="px-4 py-2">Actions</th>
           </tr>
@@ -322,37 +332,36 @@ export default function ProductVariants() {
               <tr key={v.productVariantId} className="border-b">
                 <td className="px-4 py-2">{i + 1}</td>
                 <td className="px-4 py-2">
-                  {v.Product?.Category?.categoryName || "-"}
+                  {v.Product?.SubCategory?.Category?.categoryName || "N/A"}
                 </td>
                 <td className="px-4 py-2">
-                  {v.Product?.SubCategory?.subCategoryName || "-"}
+                  {v.Product?.SubCategory?.subCategoryName || "N/A"}
                 </td>
                 <td className="px-4 py-2">{v.Product?.productName || "-"}</td>
                 <td className="px-4 py-2">{v.productColor}</td>
                 <td className="px-4 py-2">{v.stockQuantity}</td>
                 <td className="px-4 py-2">{v.lowStock}</td>
                 <td className="px-4 py-2">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(v)}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(v.productVariantId)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(v)}
+                      className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(v.productVariantId)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </td>
-                
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={8} className="text-center p-4">
+              <td colSpan={8} className="text-center py-4">
                 No variants found
               </td>
             </tr>

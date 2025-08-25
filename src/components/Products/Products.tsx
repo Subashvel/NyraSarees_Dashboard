@@ -205,33 +205,36 @@ export default function ProductComponents() {
       toast.error("Product name, Category and Subcategory are required");
       return;
     }
-  
+
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => formData.append(key, value));
-  
+
     if (productImage) {
       formData.append("productImage", productImage);
     }
-  
+
     try {
       let productResponse;
       if (editingProduct) {
-        productResponse = await updateProduct(editingProduct.productId, formData);
+        productResponse = await updateProduct(
+          editingProduct.productId,
+          formData
+        );
         toast.success("Product updated successfully!");
       } else {
         productResponse = await createProduct(formData);
         toast.success("Product created successfully!");
       }
-  
+
       // Get productId for variants
       const productId =
         editingProduct?.productId || productResponse?.data?.productId;
-  
+
       if (!productId) {
         toast.error("Product ID missing. Variants cannot be saved.");
         return;
       }
-  
+
       // Save Variants
       for (const variant of variants) {
         const variantData = new FormData();
@@ -239,16 +242,16 @@ export default function ProductComponents() {
         variantData.append("productColor", variant.productColor);
         variantData.append("stockQuantity", variant.stockQuantity || "0");
         variantData.append("lowStock", variant.lowStock || "0");
-  
+
         [1, 2, 3, 4].forEach((i) => {
           if (variant[`thumbImage${i}`] instanceof File) {
             variantData.append(`thumbImage${i}`, variant[`thumbImage${i}`]);
           }
         });
-  
+
         await createProductVariant(variantData);
       }
-  
+
       toast.success("All variants saved successfully!");
       setShowModal(false);
       resetForm();
@@ -258,7 +261,6 @@ export default function ProductComponents() {
       console.error(err);
     }
   };
-  
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -312,8 +314,6 @@ export default function ProductComponents() {
               <th className="px-4 py-2">Subcategory Name</th>
               <th className="px-4 py-2">Product Name</th>
               <th className="px-4 py-2">Product Brand</th>
-              {/* <th className="px-4 py-2">MRP</th> */}
-              {/* <th className="px-4 py-2">Offer Price</th> */}
               <th className="px-4 py-2">Product Image</th>
               <th className="px-4 py-2">Action</th>
             </tr>
@@ -346,8 +346,6 @@ export default function ProductComponents() {
                   </td>
                   <td className="px-4 py-2">{p.productName}</td>
                   <td className="px-4 py-2">{p.brandName}</td>
-                  {/* <td className="px-4 py-2">{p.productMrpPrice}</td> */}
-                  {/* <td className="px-4 py-2">{p.productOfferPrice}</td> */}
                   <td className="px-4 py-2">
                     <img
                       src={p.productImage}
@@ -544,52 +542,58 @@ export default function ProductComponents() {
 
             {/* Add Variant Button */}
             <button
-  type="button"
-  onClick={async () => {
-    try {
-      if (!editingProduct?.productId) {
-        toast.error("Please save the product first before adding variants.");
-        return;
-      }
+              type="button"
+              onClick={async () => {
+                try {
+                  if (!editingProduct?.productId) {
+                    toast.error(
+                      "Please save the product first before adding variants."
+                    );
+                    return;
+                  }
 
-      const formData = new FormData();
-      formData.append("productId", editingProduct.productId.toString());
-      formData.append("productColor", variantForm.productColor);
-      formData.append("stockQuantity", variantForm.stockQuantity || "0");
-      formData.append("lowStock", variantForm.lowStock || "0");
+                  const formData = new FormData();
+                  formData.append(
+                    "productId",
+                    editingProduct.productId.toString()
+                  );
+                  formData.append("productColor", variantForm.productColor);
+                  formData.append(
+                    "stockQuantity",
+                    variantForm.stockQuantity || "0"
+                  );
+                  formData.append("lowStock", variantForm.lowStock || "0");
 
-      [1, 2, 3, 4].forEach((i) => {
-        const key = `thumbImage${i}` as keyof VariantForm;
-        if (variantForm[key] instanceof File) {
-          formData.append(key, variantForm[key] as File);
-        }
-      });
+                  [1, 2, 3, 4].forEach((i) => {
+                    const key = `thumbImage${i}` as keyof VariantForm;
+                    if (variantForm[key] instanceof File) {
+                      formData.append(key, variantForm[key] as File);
+                    }
+                  });
 
-      await createProductVariant(formData);
-      toast.success("Variant saved successfully!");
+                  await createProductVariant(formData);
+                  toast.success("Variant saved successfully!");
 
-      setVariants((prev) => [...prev, { ...variantForm }]);
+                  setVariants((prev) => [...prev, { ...variantForm }]);
 
-      setVariantForm({
-        productColor: "",
-        stockQuantity: "",
-        lowStock: "",
-        thumbImage1: null,
-        thumbImage2: null,
-        thumbImage3: null,
-        thumbImage4: null,
-      });
-    } catch (err) {
-      toast.error("Failed to save variant");
-      console.error(err);
-    }
-  }}
-  className="bg-green-500 text-white px-4 py-2 rounded mb-4"
->
-  + Add Variant
-</button>
-
-
+                  setVariantForm({
+                    productColor: "",
+                    stockQuantity: "",
+                    lowStock: "",
+                    thumbImage1: null,
+                    thumbImage2: null,
+                    thumbImage3: null,
+                    thumbImage4: null,
+                  });
+                } catch (err) {
+                  toast.error("Failed to save variant");
+                  console.error(err);
+                }
+              }}
+              className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+            >
+              + Add Variant
+            </button>
 
             <div className="mt-4 flex justify-center">
               <button
