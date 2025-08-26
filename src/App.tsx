@@ -5,7 +5,7 @@ import NotFound from "./pages/OtherPage/NotFound";
 import UserProfiles from "./pages/UserProfiles";
 import Videos from "./pages/UiElements/Videos";
 import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
+
 import Badges from "./pages/UiElements/Badges";
 import Avatars from "./pages/UiElements/Avatars";
 import Buttons from "./pages/UiElements/Buttons";
@@ -32,8 +32,10 @@ import Variants from "./pages/Variants";
 import Homebanner from "./pages/Homebanner";
 import SubCategories from "./pages/SubCategories";
 import ProductVariant from "./pages/ProductVariant";
-import CustomerTable from "./components/customer/customer";
-import Coupons from "./components/coupon/coupon";
+import CustomerTable from "./pages/Customer";
+import Coupons from "./pages/UiElements/Alerts";
+import ProductStock from "./pages/ProductStock";
+// import Coupons from "./components/coupon/coupon";
 
 export default function App() {
   return (
@@ -64,7 +66,7 @@ export default function App() {
             {/* <Route path="/product-variant" element={<ProductVariant />} /> */}
 
             {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/Coupons" element={<Coupons />} />
             <Route path="/avatars" element={<Avatars />} />
             <Route path="/badge" element={<Badges />} />
             <Route path="/buttons" element={<Buttons />} />
@@ -84,6 +86,7 @@ export default function App() {
             <Route path="/homebanner" element={<Homebanner />} />
             <Route path="/product-variants" element={<ProductVariant />} />
             <Route path="/customers" element={<CustomerTable />} />
+            <Route path="/product-stock" element={<ProductStock />} />
 
           </Route>
 
@@ -96,7 +99,7 @@ export default function App() {
 
           {/* Products */}
 
-          <Route path="/coupons" element={<Coupons />} />
+          {/* <Route path="/coupons" element={<Coupons />} /> */}
         </Routes>
       </Router>
     </>

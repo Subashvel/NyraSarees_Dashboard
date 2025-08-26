@@ -4,20 +4,20 @@ import { Link, useLocation } from "react-router";
 // Assume these icons are imported from an icon library
 import {
   BoxCubeIcon,
-  CalenderIcon,
+  // CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   // ListIcon,
   // PageIcon,
-  PieChartIcon,
-  PlugInIcon,
-  TableIcon,
+  // PieChartIcon,
+  // PlugInIcon,
+  // TableIcon,
   // UserCircleIcon,
   ProdIcon,
-  ListIcon,
-  ChevronUpIcon,
-  PaperPlaneIcon,
+  // ListIcon,
+  // ChevronUpIcon,
+  // PaperPlaneIcon,
   
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -31,12 +31,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  // {
-  //   icon: <GridIcon />,
-  //   name: "Dashboard",
-  //   path: "/",
+  {
+    icon: <GridIcon />,
+    name: "Dashboard",
+    path: "/",
   //   // subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  // },
+  },
   // {
   //   icon: <ProdIcon />,
   //   name: "Products",
@@ -105,8 +105,8 @@ const othersItems: NavItem[] = [
   // },
   {
     icon: <BoxCubeIcon />,
-    name: "Coupon",
-    path: "/alerts",
+    name: "Orders",
+    path: "/avatars",
     // subItems: [
     //   { name: "Alerts", path: "/alerts", pro: false },
     //   { name: "Avatar", path: "/avatars", pro: false },
@@ -163,6 +163,18 @@ const productItems: NavItem[] = [
     icon: <ProdIcon />,
     name: "Product Variant",
     path: "/product-variants",
+  },
+
+  {
+    icon: <ProdIcon />,
+    name: "Coupons",
+    path: "/Coupons",
+  },
+
+  {
+    icon: <ProdIcon />,
+    name: "Product Stocks",
+    path: "/product-stock",
   },
 
   // {
@@ -503,7 +515,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Orders"
                 ) : (
                   <HorizontaLDots />
                 )}

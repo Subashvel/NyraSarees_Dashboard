@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
+// import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import {
   getUsers,
   createUser,
   updateUser,
-  deleteUser,
+  // deleteUser,
   User, // Import the same interface
 } from "./customerApi";
 
@@ -13,7 +13,7 @@ export default function CustomerTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     phonenumber: "",
@@ -38,24 +38,6 @@ export default function CustomerTable() {
   }, []);
 
   // Open modal for new or edit
-  const handleOpenModal = (user?: User) => {
-    if (user) {
-      setEditUser(user);
-      setFormData({
-        username: user.username,
-        phonenumber: user.phonenumber,
-        email: user.email,
-      });
-    } else {
-      setEditUser(null);
-      setFormData({
-        username: "",
-        phonenumber: "",
-        email: "",
-      });
-    }
-    setModalOpen(true);
-  };
 
   // Handle Create or Update
   const handleSubmit = async () => {
@@ -81,28 +63,6 @@ export default function CustomerTable() {
   
 
   // Delete
-  const handleDelete = async (id?: number) => {
-    if (!id) return; // Prevent call without valid ID
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await deleteUser(id);
-          toast.success("User deleted");
-          fetchUsers();
-        } catch {
-          toast.error("Failed to delete user");
-        }
-      }
-    });
-  };
 
 
   return (

@@ -10,6 +10,8 @@ import {
 import { getSubCategories } from "../subCategories/subCategoryApi";
 import { getCategories } from "../categories/categoryApi";
 import VariantBlock from "../Products/VariantBlock";
+import { createProductVariant } from "../ProductVariant/productVariantApi";
+import { uploadChildImages } from "../ProductVariant/productVariantChildApi";
 
 interface ProductItem {
   productId: number;
@@ -34,6 +36,7 @@ interface CategoryItem {
   categoryName: string;
 }
 
+
 const imageBaseUrl = `http://localhost:5000/uploads/`;
 
 export default function ProductComponents() {
@@ -48,6 +51,7 @@ export default function ProductComponents() {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variantBlocks, setVariantBlocks] = useState<number[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
 
   const [form, setForm] = useState({
     productName: "",
@@ -59,6 +63,18 @@ export default function ProductComponents() {
     productImage: "",
     subCategoryId: "",
     categoryId: "",
+  });
+
+  const [errors, setErrors] = useState({
+    categoryId: "",
+    subCategoryId: "",
+    productName: "",
+    productDescription: "",
+    brandName: "",
+    material: "",
+    productMrpPrice: "",
+    productOfferPrice: "",
+    productImage: "",
   });
 
   useEffect(() => {
@@ -158,41 +174,100 @@ export default function ProductComponents() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    validateField(name, value);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setProductImage(file);
-    if (file) setImagePreview(URL.createObjectURL(file));
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      if (img.width !== 726 || img.height !== 967) {
+        setErrors((prev) => ({
+          ...prev,
+          productImage: "Image must be exactly 726 × 967 pixels.",
+        }));
+        setImagePreview(null);
+      } else {
+        setErrors((prev) => ({ ...prev, productImage: "" }));
+        setImagePreview(img.src);
+        setProductImage(file); // Save valid image
+      }
+    };
   };
 
   const handleSubmit = async () => {
+    Object.entries(form).forEach(([name, value]) => validateField(name, value));
+  
+    if (Object.values(errors).some((err) => err)) return;
     if (!form.productName.trim() || !form.subCategoryId || !form.categoryId) {
       toast.error("All Fields are required");
       return;
     }
-
+  
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => formData.append(key, value));
-
-    if (productImage) {
-      formData.append("productImage", productImage);
-    }
-
+  
+    if (productImage) formData.append("productImage", productImage);
+  
     try {
       let productResponse;
       if (editingProduct) {
-        productResponse = await updateProduct(
-          editingProduct.productId,
-          formData
-        );
+        productResponse = await updateProduct(editingProduct.productId, formData);
         toast.success("Product updated successfully!");
       } else {
         productResponse = await createProduct(formData);
         toast.success("Product created successfully!");
       }
-
+  
+      const productId =
+        editingProduct?.productId || productResponse?.data?.productId;
+  
+      // 🔹 Validate all variants before saving
+      for (const variant of variants) {
+        if (variant.variantImageError) {
+          toast.error("One or more variants have invalid main images.");
+          return;
+        }
+        if (variant.childImageErrors?.some((err: string) => err)) {
+          toast.error("One or more child images are invalid.");
+          return;
+        }
+      }
+  
+      // 🔹 Save Variants
+      for (const variant of variants) {
+        const variantData = new FormData();
+        variantData.append("productId", productId);
+        variantData.append("productColor", variant.productColor);
+        variantData.append("stockQuantity", variant.stockQuantity || "0");
+        variantData.append("lowStock", variant.lowStock || "0");
+  
+        if (variant.productVariantImage) {
+          variantData.append("productVariantImage", variant.productVariantImage);
+        }
+  
+        const savedVariant = await createProductVariant(variantData);
+  
+        // 🔹 Upload only valid child images
+        if (variant.childImages?.length) {
+          const validChildImages = variant.childImages.filter(
+            (_: File, i: number) => !variant.childImageErrors?.[i]
+          );
+          if (validChildImages.length > 0) {
+            await uploadChildImages(
+              savedVariant?.data?.productVariantId,
+              validChildImages
+            );
+          }
+        }
+      }
+  
       setShowModal(false);
       resetForm();
       fetchProducts();
@@ -201,6 +276,7 @@ export default function ProductComponents() {
       console.error(err);
     }
   };
+  
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -222,9 +298,57 @@ export default function ProductComponents() {
     });
   };
 
-  function setVariants(arg0: (prev: any) => any) {
-    throw new Error("Function not implemented.");
-  }
+  const handleRemoveImage = () => {
+    setForm({ ...form, productImage: "" });
+    setImagePreview(null);
+  };
+
+  const validateField = (name: string, value: string) => {
+    let error = "";
+
+    switch (name) {
+      case "categoryId":
+        if (!value) error = "Category is required";
+        break;
+      case "subCategoryId":
+        if (!value) error = "Subcategory is required";
+        break;
+      case "productName":
+        if (!value.trim()) error = "Product name is required";
+        break;
+      case "productDescription":
+        if (!value.trim()) error = "Product Description is required";
+        else if (value.length > 500)
+          error = "Product Description cannot exceed 500 characters";
+        break;
+      case "brandName":
+        if (!value.trim()) error = "Product Brand name is required";
+        else if (value.length > 50)
+          error = "Product Brand name cannot exceed 50 characters";
+        break;
+      case "material":
+        if (!value.trim()) error = "Product Material is required";
+        else if (value.length > 50)
+          error = "Product Material cannot exceed 50 characters";
+        break;
+      case "productMrpPrice":
+        if (!value) error = "Product MRP Price is required";
+        else if (isNaN(Number(value)))
+          error = "Product MRP Price must be a number";
+        break;
+      case "productOfferPrice":
+        if (!value) error = "Product Offer Price is required";
+        else if (isNaN(Number(value)))
+          error = "Product Offer Price must be a number";
+        else if (Number(value) > Number(form.productMrpPrice))
+          error = "Product Offer Price cannot exceed MRP Price";
+        break;
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl lg:p-6">
@@ -314,7 +438,7 @@ export default function ProductComponents() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 ccc sss">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl p-8 relative mt-10">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
@@ -325,118 +449,249 @@ export default function ProductComponents() {
             <h2 className="text-lg font-semibold mb-4">
               {editingProduct ? "Edit Product" : "Add Product"}
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              {/* Category */}
+              <div>
+              <label className="block mb-1 text-sm">Category Name</label>
+                <select
+                  name="categoryId"
+                  value={form.categoryId}
+                  onChange={handleChange}
+                  className={`w-full border rounded px-2 py-2 mb-1 ${
+                    errors.categoryId ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value="">-- Select Category --</option>
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>
+                      {c.categoryName}
+                    </option>
+                  ))}
+                </select>
+                {errors.categoryId && (
+                  <p className="text-red-500 text-xs">{errors.categoryId}</p>
+                )}
+              </div>
 
-            {/* Category */}
-            <select
-              name="categoryId"
-              value={form.categoryId}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            >
-              <option value="">-- Select Category --</option>
-              {categories.map((c) => (
-                <option key={c.categoryId} value={c.categoryId}>
-                  {c.categoryName}
-                </option>
-              ))}
-            </select>
+              {/* Subcategory */}
+              <div>
+              <label className="block mb-1 text-sm">Sub Category Name</label>
+                <select
+                  name="subCategoryId"
+                  value={form.subCategoryId}
+                  onChange={handleChange}
+                  className={`w-full border rounded px-2 py-2 mb-1 ${
+                    errors.subCategoryId ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value="">-- Select Subcategory --</option>
+                  {subCategories.map((s) => (
+                    <option key={s.subCategoryId} value={s.subCategoryId}>
+                      {s.subCategoryName}
+                    </option>
+                  ))}
+                </select>
+                {errors.subCategoryId && (
+                  <p className="text-red-500 text-xs">{errors.subCategoryId}</p>
+                )}
+              </div>
+            </div>
 
-            {/* Subcategory */}
-            <select
-              name="subCategoryId"
-              value={form.subCategoryId}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            >
-              <option value="">-- Select Subcategory --</option>
-              {subCategories.map((s) => (
-                <option key={s.subCategoryId} value={s.subCategoryId}>
-                  {s.subCategoryName}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              <div>
+              <label className="block mb-1 text-sm">Product Name</label>
+              {/* Other fields */}
+              <input
+                type="text"
+                name="productName"
+                value={form.productName}
+                onChange={handleChange}
+                placeholder="Product Name"
+                className={`w-full border rounded px-3 py-2 mb-1 ${
+                  errors.productName ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.productName && (
+                <p className="text-red-500 text-xs">{errors.productName}</p>
+              )}
+              </div>
 
-            {/* Other fields */}
-            <input
-              type="text"
-              name="productName"
-              value={form.productName}
-              onChange={handleChange}
-              placeholder="Product Name"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
-            <textarea
-              name="productDescription"
-              value={form.productDescription}
-              onChange={handleChange}
-              placeholder="Description"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
-            <input
-              type="text"
-              name="brandName"
-              value={form.brandName}
-              onChange={handleChange}
-              placeholder="Brand"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
-            <input
-              type="text"
-              name="material"
-              value={form.material}
-              onChange={handleChange}
-              placeholder="Material"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
-            <input
-              type="number"
-              name="productMrpPrice"
-              value={form.productMrpPrice}
-              onChange={handleChange}
-              placeholder="MRP Price"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
-            <input
-              type="number"
-              name="productOfferPrice"
-              value={form.productOfferPrice}
-              onChange={handleChange}
-              placeholder="Offer Price"
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-            />
+              <div>
+              <label className="block mb-1 text-sm">Product Description</label>
+              <textarea
+                name="productDescription"
+                value={form.productDescription}
+                onChange={handleChange}
+                placeholder="Description"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              {errors.productDescription && (
+                <p className="text-red-500 text-xs">
+                  {errors.productDescription}
+                </p>
+              )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              <div>
+              <label className="block mb-1 text-sm">Product Brand Name</label>
+              <input
+                type="text"
+                name="brandName"
+                value={form.brandName}
+                onChange={handleChange}
+                placeholder="Brand"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              {errors.brandName && (
+                <p className="text-red-500 text-xs">{errors.brandName}</p>
+              )}
+              </div>
+              <div>
+              <label className="block mb-1 text-sm">Product Material</label>
+              <input
+                type="text"
+                name="material"
+                value={form.material}
+                onChange={handleChange}
+                placeholder="Material"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              {errors.material && (
+                <p className="text-red-500 text-xs">{errors.material}</p>
+              )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+              <label className="block mb-1 text-sm">Product MRP Price</label>
+              <input
+                type="number"
+                name="productMrpPrice"
+                value={form.productMrpPrice}
+                onChange={handleChange}
+                placeholder="MRP Price"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              {errors.productMrpPrice && (
+                <p className="text-red-500 text-xs">{errors.productMrpPrice}</p>
+              )}
+              </div>
+              <div>
+              <label className="block mb-1 text-sm">Product Offer Price</label>
+              <input
+                type="number"
+                name="productOfferPrice"
+                value={form.productOfferPrice}
+                onChange={handleChange}
+                placeholder="Offer Price"
+                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              />
+              {errors.productOfferPrice && (
+                <p className="text-red-500 text-xs">
+                  {errors.productOfferPrice}
+                </p>
+              )}
+              </div>
+            </div>
 
             {/* Image */}
-            <label className="block mb-1 text-sm mt-3">Product Image</label>
+            <label className="block mb-1 text-sm mt-3 ">Product Image</label>
             <input
               type="file"
               accept="image/png, image/jpeg"
               onChange={handleImageChange}
               className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300"
             />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-10 mt-2 rounded"
-              />
+            {errors.productImage && (
+              <p className="text-red-500 text-xs mt-1">{errors.productImage}</p>
             )}
+            <div className="mb-10">
+              <label className="block mb-1 text-sm font-medium">
+                Product Image (726 × 967)
+              </label>
+              <div
+                className="preview-container"
+                onClick={() =>
+                  document.getElementById("productImageInput")?.click()
+                }
+              >
+                {imagePreview ? (
+                  <div className="mt-2 relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-cover rounded"
+                    />
+                    <button
+                      onClick={handleRemoveImage}
+                      className="absolute top-0 right-0 bg-red-600 text-white text-xs px-1 rounded-full"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-10 w-10 mb-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m-7-4l7-7 7 7"
+                      />
+                    </svg>
+                    Upload Image
+                  </div>
+                )}
+              </div>
+
+              <input
+                id="productImageInput"
+                type="file"
+                accept="image/png, image/jpeg"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </div>
 
             {/* Variants */}
-            <h3 className="text-lg font-semibold mb-4 mt-10">
+            {/* <h3 className="text-lg font-semibold mb-4 mt-10">
               Product Variants
-            </h3>
+            </h3> */}
 
-            
             {variantBlocks.map((blockId) => (
-  <VariantBlock
-    key={blockId}
-    productId={editingProduct ? editingProduct.productId : 0} // ✅ use current productId
-    onDelete={() => {
-      setVariantBlocks((prev) => prev.filter((id) => id !== blockId));
-    }}
-  />
-))}
+              <VariantBlock
+                key={blockId}
+                productId={editingProduct ? editingProduct.productId : 0}
+                onChange={(data) => {
+                  setVariants((prev) => {
+                    const updated = [...prev];
+                    const idx = updated.findIndex((v) => v.blockId === blockId);
 
+                    if (idx >= 0) {
+                      updated[idx] = { ...data, blockId };
+                    } else {
+                      updated.push({ ...data, blockId });
+                    }
+                    return updated;
+                  });
+                }}
+                onDelete={() => {
+                  setVariantBlocks((prev) =>
+                    prev.filter((id) => id !== blockId)
+                  );
+                  setVariants((prev) =>
+                    prev.filter((v) => v.blockId !== blockId)
+                  );
+                }}
+              />
+            ))}
 
             <button
               type="button"

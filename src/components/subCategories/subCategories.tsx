@@ -32,6 +32,8 @@ export default function SubCategoryComponents() {
     null
   );
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [subCategoryError, setSubCategoryError] = useState("");
+  const [categorySelectError, setCategorySelectError] = useState("");
 
   useEffect(() => {
     fetchSubCategories();
@@ -84,26 +86,27 @@ export default function SubCategoryComponents() {
   };
 
   const handleSubmit = async () => {
-    if (!subCategoryName.trim()) {
-      toast.error("Subcategory name is required");
-      return;
-    }
+    const nameError = validateSubCategoryName(subCategoryName);
+    setSubCategoryError(nameError);
 
     if (!selectedCategoryId) {
-      toast.error("Please select a category");
-      return;
+      setCategorySelectError("Please select a category");
+    } else {
+      setCategorySelectError("");
     }
+
+    if (nameError || !selectedCategoryId) return;
 
     try {
       if (editingSubcategory) {
         await updateSubCategory(
           editingSubcategory.subCategoryId,
           selectedCategoryId,
-          subCategoryName
+          subCategoryName.trim()
         );
         toast.success("Subcategory updated successfully!");
       } else {
-        await createSubCategory(selectedCategoryId, subCategoryName);
+        await createSubCategory(selectedCategoryId, subCategoryName.trim());
         toast.success("Subcategory added successfully!");
       }
 
@@ -134,6 +137,16 @@ export default function SubCategoryComponents() {
         }
       }
     });
+  };
+
+  const validateSubCategoryName = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return "Subcategory name is required";
+    if (trimmed.length < 3)
+      return "Subcategory Name should be at least 3 characters";
+    if (trimmed.length > 50)
+      return "Subcategory Name must not exceed 50 characters";
+    return "";
   };
 
   return (
@@ -178,9 +191,8 @@ export default function SubCategoryComponents() {
                 <tr key={subcat.subCategoryId} className="border-b">
                   <td className="px-4 py-2">{index + 1}</td>
                   <td className="px-4 py-2">
-                    {categories.find(
-                      (c) => c.categoryId === subcat.categoryId
-                    )?.categoryName || "Unknown"}
+                    {categories.find((c) => c.categoryId === subcat.categoryId)
+                      ?.categoryName || "Unknown"}
                   </td>
                   <td className="px-4 py-2">{subcat.subCategoryName}</td>
                   <td className="px-4 py-2">
@@ -224,12 +236,17 @@ export default function SubCategoryComponents() {
             <label className="block mb-1 text-sm">Category Name</label>
             <select
               value={selectedCategoryId !== null ? selectedCategoryId : ""}
-              onChange={(e) =>
-                setSelectedCategoryId(
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
-              }
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              onChange={(e) => {
+                const value =
+                  e.target.value === "" ? null : Number(e.target.value);
+                setSelectedCategoryId(value);
+                setCategorySelectError(
+                  value === null ? "Please select a category" : ""
+                );
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                categorySelectError ? "border-red-500" : "border-gray-300"
+              }`}
             >
               <option value="">-- Select Category --</option>
               {categories.map((cat) => (
@@ -238,14 +255,27 @@ export default function SubCategoryComponents() {
                 </option>
               ))}
             </select>
+            {categorySelectError && (
+              <p className="text-red-500 text-sm mb-2">{categorySelectError}</p>
+            )}
 
             <label className="block mb-1 text-sm">Subcategory Name</label>
             <input
               type="text"
               value={subCategoryName}
-              onChange={(e) => setSubCategoryName(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              maxLength={50}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSubCategoryName(value);
+                setSubCategoryError(validateSubCategoryName(value)); // live validation
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                subCategoryError ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {subCategoryError && (
+              <p className="text-red-500 text-sm mb-2">{subCategoryError}</p>
+            )}
 
             <div className="mt-4 flex justify-center">
               <button

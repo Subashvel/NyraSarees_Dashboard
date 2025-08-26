@@ -15,6 +15,7 @@ export default function HomeBannerManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editBanner, setEditBanner] = useState<any>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBanners();
@@ -46,9 +47,13 @@ export default function HomeBannerManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (!imageFile && !editBanner) {
       toast.error("Please select an image");
+      return;
+    }
+    if (imageError) {
+      toast.error("Please fix image errors before submitting");
       return;
     }
 
@@ -89,6 +94,23 @@ export default function HomeBannerManager() {
       }
     });
   };
+
+  const validateImage = (file: File) => {
+    return new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        if (img.width === 726 && img.height === 967) {
+          setImageError(null);
+          resolve(true);
+        } else {
+          setImageError("Image must be exactly 726 × 967 pixels.");
+          resolve(false);
+        }
+      };
+    });
+  };
+  
 
   return (
     <div
@@ -172,12 +194,24 @@ export default function HomeBannerManager() {
               <div>
                 <label className="block mb-1 font-medium">Banner Image</label>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    setImageFile(e.target.files ? e.target.files[0] : null)
-                  }
-                />
+  type="file"
+  accept="image/*"
+  onChange={async (e) => {
+    const file = e.target.files ? e.target.files[0] : null;
+    if (file) {
+      const isValid = await validateImage(file);
+      if (isValid) {
+        setImageFile(file);
+      } else {
+        setImageFile(null);
+      }
+    } else {
+      setImageFile(null);
+      setImageError(null);
+    }
+  }}
+/>
+{imageError && <p className="text-red-500 text-sm mt-1">{imageError}</p>}
                 {(imageFile || editBanner?.bannerImage) && (
                   <img
                     src={

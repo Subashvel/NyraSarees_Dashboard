@@ -804,3 +804,16 @@ span.flatpickr-weekday,
   position: relative;
   width: 100%;
 }
+.preview-container{
+max-width: 180px;
+    height: 220px;
+    border: 3px dashed rgba(0, 251, 255, 0.325);
+    border-radius: 5px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.35s;
+}
+.p-bottom{
+  padding-bottom: 50px;
+}

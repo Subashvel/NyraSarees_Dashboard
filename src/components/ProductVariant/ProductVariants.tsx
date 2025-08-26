@@ -66,12 +66,22 @@ export default function ProductVariants() {
   const [preview, setPreview] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [childImages, setChildImages] = useState<File[]>([]);
   const [childPreview, setChildPreview] = useState<string[]>([]);
   const [existingChildImages, setExistingChildImages] = useState<
     { id: number; url: string }[]
   >([]);
+  const [childImageErrors, setChildImageErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState({
+    categoryId: "",
+    subCategoryId: "",
+    productId: "",
+    productColor: "",
+    stockQuantity: "",
+    lowStock: "",
+    productVariantImage: "",
+  });
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -178,10 +188,25 @@ export default function ProductVariants() {
   // --- Image Change ---
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setForm({ ...form, productVariantImage: file });
-      setPreview(URL.createObjectURL(file));
-    }
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      if (img.width !== 726 || img.height !== 967) {
+        setErrors((prev) => ({
+          ...prev,
+          productVariantImage: "Image must be exactly 726 × 967 pixels.",
+        }));
+        setForm({ ...form, productVariantImage: null });
+        setPreview(null);
+      } else {
+        setErrors((prev) => ({ ...prev, productVariantImage: "" }));
+        setForm({ ...form, productVariantImage: file });
+        setPreview(img.src);
+      }
+    };
   };
 
   // --- Remove Image ---
@@ -196,20 +221,47 @@ export default function ProductVariants() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+  
     if (childImages.length >= 10) {
-      toast.error("Maximum 10 images allowed");
+      setChildImageErrors((prev) => {
+        const newErrors = [...prev];
+        newErrors[index] = "Maximum 10 images allowed";
+        return newErrors;
+      });
       return;
     }
-
-    const newImages = [...childImages];
-    newImages[index] = file;
-    setChildImages(newImages);
-
-    const newPreviews = [...childPreview];
-    newPreviews[index] = URL.createObjectURL(file);
-    setChildPreview(newPreviews);
+  
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+  
+    img.onload = () => {
+      if (img.width !== 726 || img.height !== 967) {
+        setChildImageErrors((prev) => {
+          const newErrors = [...prev];
+          newErrors[index] = "Image must be exactly 726 × 967 pixels.";
+          return newErrors;
+        });
+        return;
+      }
+  
+      // ✅ Clear error if valid
+      setChildImageErrors((prev) => {
+        const newErrors = [...prev];
+        newErrors[index] = "";
+        return newErrors;
+      });
+  
+      const newImages = [...childImages];
+      newImages[index] = file;
+      setChildImages(newImages);
+  
+      const newPreviews = [...childPreview];
+      newPreviews[index] = img.src;
+      setChildPreview(newPreviews);
+    };
   };
+  
+  
 
   const addAnotherImageField = () => {
     if (childImages.length >= 10) {
@@ -218,7 +270,9 @@ export default function ProductVariants() {
     }
     setChildImages([...childImages, new File([], "")]); // placeholder
     setChildPreview([...childPreview, ""]);
+    setChildImageErrors([...childImageErrors, ""]); // ✅ add error placeholder
   };
+  
 
   const removeChildImage = (index: number) => {
     const newImages = [...childImages];
@@ -232,12 +286,25 @@ export default function ProductVariants() {
   // --- Submit ---
   const handleSubmit = async () => {
     try {
-      if (!form.productId) {
-        toast.error("Please select a product");
-        return;
-      }
-      if (!form.productColor) {
-        toast.error("Please enter a product color");
+      if (
+        !form.categoryId ||
+        !form.subCategoryId ||
+        !form.productId ||
+        !form.productColor
+      ) {
+        setErrors({
+          categoryId: form.categoryId ? "" : "Category name is required",
+          subCategoryId: form.subCategoryId
+            ? ""
+            : "Subcategory name is required",
+          productId: form.productId ? "" : "Product name is required",
+          productColor: form.productColor ? "" : "Color is required",
+          stockQuantity: form.stockQuantity ? "" : "Stock quantity is required",
+          lowStock: form.lowStock ? "" : "Low stock is required",
+          productVariantImage: form.productVariantImage
+            ? ""
+            : errors.productVariantImage,
+        });
         return;
       }
 
@@ -344,6 +411,18 @@ export default function ProductVariants() {
     }
   };
 
+  const filteredVariants = variants.filter((v) => {
+    const matchesCategory = form.categoryId
+      ? v.Product?.categoryId === Number(form.categoryId)
+      : true;
+
+    const matchesSubCategory = form.subCategoryId
+      ? v.Product?.subCategoryId === Number(form.subCategoryId)
+      : true;
+
+    return matchesCategory && matchesSubCategory;
+  });
+
   // --- Filters ---
   const filteredSubCategories = subCategories.filter(
     (sc) => sc.categoryId === Number(form.categoryId || 0)
@@ -423,8 +502,8 @@ export default function ProductVariants() {
           </tr>
         </thead>
         <tbody>
-          {variants.length ? (
-            variants.map((v, i) => (
+          {filteredVariants.length ? (
+            filteredVariants.map((v, i) => (
               <tr key={v.productVariantId} className="border-b">
                 <td className="px-4 py-2">{i + 1}</td>
                 <td className="px-4 py-2">
@@ -468,7 +547,7 @@ export default function ProductVariants() {
       {/* Modal Form */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 ccc sss">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl p-8 relative mt-10">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3"
@@ -482,15 +561,22 @@ export default function ProductVariants() {
             {/* Dropdowns */}
             <select
               value={form.categoryId || ""}
-              onChange={(e) =>
+              onChange={(e) => {
+                const value = e.target.value;
                 setForm({
                   ...form,
-                  categoryId: e.target.value,
+                  categoryId: value,
                   subCategoryId: "",
                   productId: "",
-                })
-              }
-              className="w-full border rounded px-3 py-2 mb-3"
+                });
+                setErrors((prev) => ({
+                  ...prev,
+                  categoryId: value ? "" : "Category name is required",
+                }));
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                errors.categoryId ? "border-red-500" : "border-gray-300"
+              }`}
             >
               <option value="">Select Category</option>
               {categories.map((c) => (
@@ -499,18 +585,23 @@ export default function ProductVariants() {
                 </option>
               ))}
             </select>
+            {errors.categoryId && (
+              <p className="text-red-500 text-xs">{errors.categoryId}</p>
+            )}
 
             <select
               value={form.subCategoryId || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  subCategoryId: e.target.value,
-                  productId: "",
-                })
-              }
-              disabled={!form.categoryId}
-              className="w-full border rounded px-3 py-2 mb-3"
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm({ ...form, subCategoryId: value, productId: "" });
+                setErrors((prev) => ({
+                  ...prev,
+                  subCategoryId: value ? "" : "Subcategory name is required",
+                }));
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                errors.subCategoryId ? "border-red-500" : "border-gray-300"
+              }`}
             >
               <option value="">Select SubCategory</option>
               {filteredSubCategories.map((sc) => (
@@ -519,14 +610,23 @@ export default function ProductVariants() {
                 </option>
               ))}
             </select>
+            {errors.subCategoryId && (
+              <p className="text-red-500 text-xs">{errors.subCategoryId}</p>
+            )}
 
             <select
               value={form.productId || ""}
-              onChange={(e) =>
-                setForm({ ...form, productId: Number(e.target.value) })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm({ ...form, productId: Number(value) });
+                setErrors((prev) => ({
+                  ...prev,
+                  productId: value ? "" : "Product is required",
+                }));
+              }}
               disabled={!form.subCategoryId}
-              className="w-full border rounded px-3 py-2 mb-3"
+              className={`w-full border rounded px-3 py-2 mb-1 
+    ${errors.productId ? "border-red-500" : "border-gray-300"}`}
             >
               <option value="">Select Product</option>
               {filteredProducts.map((p) => (
@@ -535,6 +635,9 @@ export default function ProductVariants() {
                 </option>
               ))}
             </select>
+            {errors.productId && (
+              <p className="text-red-500 text-xs">{errors.productId}</p>
+            )}
 
             {/* Existing Child Images */}
             {editingId && existingChildImages.length > 0 && (
@@ -566,27 +669,59 @@ export default function ProductVariants() {
               type="text"
               placeholder="Color"
               value={form.productColor || ""}
-              onChange={(e) =>
-                setForm({ ...form, productColor: e.target.value })
-              }
-              className="w-full border rounded px-3 py-2 mb-3"
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm({ ...form, productColor: value });
+                setErrors((prev) => ({
+                  ...prev,
+                  productColor: value.trim() ? "" : "Color is required",
+                }));
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                errors.productColor ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {errors.productColor && (
+              <p className="text-red-500 text-xs">{errors.productColor}</p>
+            )}
             <input
               type="number"
               placeholder="Stock Quantity"
               value={form.stockQuantity || ""}
-              onChange={(e) =>
-                setForm({ ...form, stockQuantity: e.target.value })
-              }
-              className="w-full border rounded px-3 py-2 mb-3"
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm({ ...form, stockQuantity: value });
+                setErrors((prev) => ({
+                  ...prev,
+                  stockQuantity: value ? "" : "Stock quantity is required",
+                }));
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                errors.stockQuantity ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {errors.stockQuantity && (
+              <p className="text-red-500 text-xs">{errors.stockQuantity}</p>
+            )}
             <input
               type="number"
               placeholder="Low Stock"
               value={form.lowStock || ""}
-              onChange={(e) => setForm({ ...form, lowStock: e.target.value })}
-              className="w-full border rounded px-3 py-2 mb-3"
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm({ ...form, lowStock: value });
+                setErrors((prev) => ({
+                  ...prev,
+                  lowStock: value ? "" : "Low stock is required",
+                }));
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                errors.lowStock ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {errors.lowStock && (
+              <p className="text-red-500 text-xs">{errors.lowStock}</p>
+            )}
 
             {/* Image Upload */}
             <label className="block mb-1 text-sm mt-3">Variant Image</label>
@@ -611,35 +746,48 @@ export default function ProductVariants() {
                 </button>
               </div>
             )}
+            {errors.productVariantImage && (
+              <p className="text-red-500 text-xs">
+                {errors.productVariantImage}
+              </p>
+            )}
 
             {/* Child Images */}
             <label className="block mt-4 text-sm font-semibold">
               Thumb Images
             </label>
             {childImages.map((_, index) => (
-              <div key={index} className="flex items-center gap-3 mb-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleChildImageChange(e, index)}
-                  className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
-                />
-                {childPreview[index] && (
-                  <div className="relative inline-block">
-                    <img
-                      src={childPreview[index]}
-                      className="h-16 w-16 object-cover rounded border"
-                    />
-                    <button
-                      onClick={() => removeChildImage(index)}
-                      className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+  <div key={index} className="flex flex-col gap-1 mb-2">
+    <div className="flex items-center gap-3">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleChildImageChange(e, index)}
+        className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
+      />
+
+      {childPreview[index] && (
+        <div className="relative inline-block">
+          <img
+            src={childPreview[index]}
+            className="h-16 w-16 object-cover rounded border"
+          />
+          <button
+            onClick={() => removeChildImage(index)}
+            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+
+    {/* 🔹 Show error here */}
+    {childImageErrors[index] && (
+      <p className="text-red-500 text-xs">{childImageErrors[index]}</p>
+    )}
+  </div>
+))}
 
             <button
               type="button"

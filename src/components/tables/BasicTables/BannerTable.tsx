@@ -64,7 +64,7 @@ export default function BasicTableOne() {
     });
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (_id: number) => {
     
     toast.success("Banner updated successfully!");
   };

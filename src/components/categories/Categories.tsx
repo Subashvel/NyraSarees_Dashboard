@@ -23,6 +23,19 @@ export default function CategoryComponents() {
     null
   );
   const [categoryName, setCategoryName] = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  const validateCategoryName = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return "Category name is required";
+    if (trimmed && trimmed.length < 3) {
+      return "Category Name should be at least 3 characters long";
+    }
+    if (trimmed.length > 50) {
+      return "Category Name must not go beyond 50 characters";
+    }
+    return "";
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -62,23 +75,22 @@ export default function CategoryComponents() {
   };
 
   const handleSubmit = async () => {
-    if (!categoryName.trim()) {
-      toast.error("Category name is required");
+    const errorMsg = validateCategoryName(categoryName);
+    if (errorMsg) {
+      setValidationError(errorMsg); // Show inline error
       return;
     }
 
-    const formData = new FormData();
-    formData.append("categoryName", categoryName);
+    setValidationError("");
 
     try {
       if (editingCategory) {
-        await updateCategory(editingCategory.categoryId, categoryName);
+        await updateCategory(editingCategory.categoryId, categoryName.trim());
         toast.success("Category updated successfully!");
       } else {
-        await createCategory(categoryName);
+        await createCategory(categoryName.trim());
         toast.success("Category added successfully!");
       }
-
       setShowModal(false);
       resetForm();
       fetchCategories();
@@ -190,15 +202,23 @@ export default function CategoryComponents() {
             <h2 className="text-lg font-semibold mb-4">
               {editingCategory ? "Edit Category" : "Add Category"}
             </h2>
-
             <label className="block mb-1 text-sm">Category Name</label>
             <input
               type="text"
               value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+              // maxLength={50}
+              onChange={(e) => {
+                const value = e.target.value;
+                setCategoryName(value);
+                setValidationError(validateCategoryName(value)); // Validate on every change
+              }}
+              className={`w-full border rounded px-3 py-2 mb-1 ${
+                validationError ? "border-red-500" : "border-gray-300"
+              }`}
             />
-
+            {validationError && (
+              <p className="text-red-500 text-sm mb-2">{validationError}</p>
+            )}
             <div className="mt-4 flex justify-center">
               <button
                 onClick={handleSubmit}

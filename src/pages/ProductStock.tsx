@@ -1,8 +1,9 @@
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import HomebannerComponents from "../components/homebanner/homebanner";
+import ProductStock from "../components/ProductStock/ProductStock";
 
-export default function Homebanner() {
+
+export default function ProductsStock() {
   return (
     <>
       <PageMeta
@@ -16,7 +17,7 @@ export default function Homebanner() {
         </h3> */}
         <div className="space-y-6">
 
-            <HomebannerComponents />
+            <ProductStock />
 
 
         </div>
