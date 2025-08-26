@@ -19,7 +19,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import ForgotPassword from "./pages/AuthPages/ForgotPassword";
-import Product from "./pages/Products";
+
 import BasicTableOne from "./components/tables/BasicTables/BasicTableOne";
 // import BannerTable from "./components/tables/BasicTables/BannerTable";
 // import UserTable from "./components/tables/BasicTables/UserTable";
@@ -33,6 +33,7 @@ import Homebanner from "./pages/Homebanner";
 import SubCategories from "./pages/SubCategories";
 import ProductVariant from "./pages/ProductVariant";
 import CustomerTable from "./components/customer/customer";
+import Coupons from "./components/coupon/coupon";
 
 export default function App() {
   return (
@@ -95,7 +96,7 @@ export default function App() {
 
           {/* Products */}
 
-          <Route path="/product" element={<Product />} />
+          <Route path="/coupons" element={<Coupons />} />
         </Routes>
       </Router>
     </>

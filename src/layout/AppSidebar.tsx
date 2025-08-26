@@ -15,6 +15,9 @@ import {
   TableIcon,
   // UserCircleIcon,
   ProdIcon,
+  ListIcon,
+  ChevronUpIcon,
+  PaperPlaneIcon,
   
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
@@ -28,11 +31,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
-  },
+  // {
+  //   icon: <GridIcon />,
+  //   name: "Dashboard",
+  //   path: "/",
+  //   // subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+  // },
   // {
   //   icon: <ProdIcon />,
   //   name: "Products",
@@ -91,34 +95,35 @@ const navItems: NavItem[] = [
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart", pro: false },
-      { name: "Bar Chart", path: "/bar-chart", pro: false },
-    ],
-  },
+  // {
+  //   icon: <PieChartIcon />,
+  //   name: "Charts",
+  //   subItems: [
+  //     { name: "Line Chart", path: "/line-chart", pro: false },
+  //     { name: "Bar Chart", path: "/bar-chart", pro: false },
+  //   ],
+  // },
   {
     icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts", path: "/alerts", pro: false },
-      { name: "Avatar", path: "/avatars", pro: false },
-      { name: "Badge", path: "/badge", pro: false },
-      { name: "Buttons", path: "/buttons", pro: false },
-      { name: "Images", path: "/images", pro: false },
-      { name: "Videos", path: "/videos", pro: false },
-    ],
+    name: "Coupon",
+    path: "/alerts",
+    // subItems: [
+    //   { name: "Alerts", path: "/alerts", pro: false },
+    //   { name: "Avatar", path: "/avatars", pro: false },
+    //   { name: "Badge", path: "/badge", pro: false },
+    //   { name: "Buttons", path: "/buttons", pro: false },
+    //   { name: "Images", path: "/images", pro: false },
+    //   { name: "Videos", path: "/videos", pro: false },
+    // ],
   },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
-    ],
-  },
+  // {
+  //   icon: <PlugInIcon />,
+  //   name: "Authentication",
+  //   subItems: [
+  //     { name: "Sign In", path: "/signin", pro: false },
+  //     { name: "Sign Up", path: "/signup", pro: false },
+  //   ],
+  // },
 ];
 
 const bannerItems: NavItem[] = [
@@ -153,16 +158,19 @@ const productItems: NavItem[] = [
     name: "Products",
     path: "/products",
   },
+  
   {
     icon: <ProdIcon />,
     name: "Product Variant",
     path: "/product-variants",
   },
-  {
-    icon: <ProdIcon />,
-    name: "Product Stock",
-    path: "/product",
-  },
+
+  // {
+  //   icon: <ProdIcon />,
+  //   name: "Coupon",
+  //   path: "/coupons",
+  // },
+  
 ];
 
 const AppSidebar: React.FC = () => {
@@ -185,13 +193,12 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     let submenuMatched = false;
-    ["main", "others", "banners", "customers", "products"].forEach(
+    ["main", "banners", "customers", "products"].forEach(
       (menuType) => {
         const items =
           menuType === "main"
             ? navItems
-            : menuType === "others"
-            ? othersItems
+            
             : bannerItems;
        
         items.forEach((nav, index) => {
@@ -426,7 +433,7 @@ const AppSidebar: React.FC = () => {
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
             <div>
-              <h2
+              {/* <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered
                     ? "lg:justify-center"
@@ -438,7 +445,7 @@ const AppSidebar: React.FC = () => {
                 ) : (
                   <HorizontaLDots className="size-6" />
                 )}
-              </h2>
+              </h2> */}
               {renderMenuItems(navItems, "main")}
             </div>
 

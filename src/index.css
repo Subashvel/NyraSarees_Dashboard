@@ -788,3 +788,19 @@ span.flatpickr-weekday,
 .sss {
   background-color: rgba(0, 0, 0, 0.5)
 }
+
+.modal-content {
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  background-clip: padding-box;
+  background-color: var(--bs-modal-bg);
+  border: var(--bs-modal-border-width) solid var(--bs-modal-border-color);
+  border-radius: var(--bs-modal-border-radius);
+  color: var(--bs-modal-color);
+  -ms-flex-direction: column;
+  flex-direction: column;
+  outline: 0;
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+}

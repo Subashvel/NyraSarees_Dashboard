@@ -10,7 +10,11 @@ import {
 import { getProducts } from "../Products/productApi";
 import { getCategories } from "../categories/categoryApi";
 import { getSubCategories } from "../subCategories/subCategoryApi";
-
+import {
+  getChildImages,
+  deleteChildImage,
+  uploadChildImages,
+} from "../ProductVariant/productVariantChildApi";
 // --- Interfaces ---
 interface CategoryItem {
   categoryId: number;
@@ -31,20 +35,17 @@ interface ProductItem {
 }
 
 interface ProductVariantItem {
-  productVariantId: number; 
+  productVariantId: number;
   productId: number;
   variantId: number;
   productColor: string;
   stockQuantity: string;
   lowStock: string;
-  thumbImage1?: string;
-  thumbImage2?: string;
-  thumbImage3?: string;
-  thumbImage4?: string;
+  productVariantImage: string | null;
   Product?: {
     productName: string;
-    categoryId?: number; 
-    subCategoryId?: number; 
+    categoryId?: number;
+    subCategoryId?: number;
     SubCategory?: {
       subCategoryName: string;
       Category?: {
@@ -62,10 +63,15 @@ export default function ProductVariants() {
   const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [form, setForm] = useState<any>({});
-  const [previews, setPreviews] = useState<{ [key: string]: string }>({});
+  const [preview, setPreview] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [childImages, setChildImages] = useState<File[]>([]);
+  const [childPreview, setChildPreview] = useState<string[]>([]);
+  const [existingChildImages, setExistingChildImages] = useState<
+    { id: number; url: string }[]
+  >([]);
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -85,7 +91,7 @@ export default function ProductVariants() {
         setCategories(json.data);
       }
     } catch (err) {
-      console.error("Failed to load subcategories", err);
+      console.error("Failed to load categories", err);
     }
   };
 
@@ -124,45 +130,29 @@ export default function ProductVariants() {
   const fetchVariants = async () => {
     try {
       const json = await getProductVariants();
-
       if (json.success && Array.isArray(json.data)) {
-        // Map variants AFTER categories, subCategories, and products are loaded
         const updated = json.data.map((variant: ProductVariantItem) => {
           const product = products.find(
             (p) => p.productId === variant.productId
           );
 
-          const categoryName = product
-            ? categories.find((c) => c.categoryId === product.categoryId)
-                ?.categoryName || "-"
-            : "-";
-
-          const subCategoryName = product
-            ? subCategories.find(
-                (s) => s.subCategoryId === product.subCategoryId
-              )?.subCategoryName || "-"
-            : "-";
-
           return {
             ...variant,
-            thumbImage1: variant.thumbImage1
-              ? `${imageBaseUrl}${variant.thumbImage1}`
-              : undefined,
-            thumbImage2: variant.thumbImage2
-              ? `${imageBaseUrl}${variant.thumbImage2}`
-              : undefined,
-            thumbImage3: variant.thumbImage3
-              ? `${imageBaseUrl}${variant.thumbImage3}`
-              : undefined,
-            thumbImage4: variant.thumbImage4
-              ? `${imageBaseUrl}${variant.thumbImage4}`
-              : undefined,
-            categoryName,
-            subCategoryName,
+            productVariantImage: variant.productVariantImage
+              ? `${imageBaseUrl}${variant.productVariantImage}`
+              : null,
+            categoryName:
+              product &&
+              categories.find((c) => c.categoryId === product.categoryId)
+                ?.categoryName,
+            subCategoryName:
+              product &&
+              subCategories.find(
+                (s) => s.subCategoryId === product.subCategoryId
+              )?.subCategoryName,
             productName: product?.productName || "-",
           };
         });
-
         setVariants(updated);
       } else {
         setVariants([]);
@@ -173,37 +163,75 @@ export default function ProductVariants() {
     }
   };
 
-  // --- Filters ---
-  const filteredSubCategories = subCategories.filter(
-    (sc) => sc.categoryId === Number(form.categoryId || 0)
-  );
-  const filteredProducts = products.filter(
-    (p) => p.subCategoryId === Number(form.subCategoryId || 0)
-  );
-
   // --- Reset ---
   const resetForm = () => {
     setForm({});
-    setPreviews({});
+    setPreview(null);
     setEditingId(null);
     setShowModal(false);
+    setChildImages([]);
+    setChildPreview([]);
+    setExistingChildImages([]);
+    setEditingId(null);
   };
 
   // --- Image Change ---
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    key: string
-  ) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setForm({ ...form, [key]: file });
-      setPreviews({ ...previews, [key]: URL.createObjectURL(file) });
+      setForm({ ...form, productVariantImage: file });
+      setPreview(URL.createObjectURL(file));
     }
   };
 
+  // --- Remove Image ---
+  const handleRemoveImage = () => {
+    setForm({ ...form, productVariantImage: null });
+    setPreview(null);
+  };
+
+  const handleChildImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (childImages.length >= 10) {
+      toast.error("Maximum 10 images allowed");
+      return;
+    }
+
+    const newImages = [...childImages];
+    newImages[index] = file;
+    setChildImages(newImages);
+
+    const newPreviews = [...childPreview];
+    newPreviews[index] = URL.createObjectURL(file);
+    setChildPreview(newPreviews);
+  };
+
+  const addAnotherImageField = () => {
+    if (childImages.length >= 10) {
+      toast.error("Maximum 10 images allowed");
+      return;
+    }
+    setChildImages([...childImages, new File([], "")]); // placeholder
+    setChildPreview([...childPreview, ""]);
+  };
+
+  const removeChildImage = (index: number) => {
+    const newImages = [...childImages];
+    const newPreviews = [...childPreview];
+    newImages.splice(index, 1);
+    newPreviews.splice(index, 1);
+    setChildImages(newImages);
+    setChildPreview(newPreviews);
+  };
+
+  // --- Submit ---
   const handleSubmit = async () => {
     try {
-      
       if (!form.productId) {
         toast.error("Please select a product");
         return;
@@ -219,26 +247,26 @@ export default function ProductVariants() {
       formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
       formData.append("lowStock", form.lowStock?.toString() || "0");
 
-      
-      [1, 2, 3, 4].forEach((i) => {
-        const key = `thumbImage${i}`;
-        const value = form[key];
-        if (value instanceof File) {
-          formData.append(key, value);
-        }
-      });
-
-      console.log("Submitting FormData:");
-      for (let [key, val] of formData.entries()) {
-        console.log(key, val);
+      if (form.productVariantImage instanceof File) {
+        formData.append("productVariantImage", form.productVariantImage);
       }
 
+      let savedVariant;
       if (editingId) {
-        await updateProductVariant(editingId, formData);
+        savedVariant = await updateProductVariant(editingId, formData);
         toast.success("Variant updated successfully!");
       } else {
-        await createProductVariant(formData);
+        savedVariant = await createProductVariant(formData);
         toast.success("Variant created successfully!");
+      }
+
+      // Upload child images if present
+      if (childImages.length > 0 && savedVariant?.data?.productVariantId) {
+        await uploadChildImages(
+          savedVariant.data.productVariantId,
+          childImages
+        );
+        toast.success("Child images uploaded!");
       }
 
       resetForm();
@@ -270,7 +298,8 @@ export default function ProductVariants() {
   };
 
   // --- Edit ---
-  const handleEdit = (variant: ProductVariantItem) => {
+
+  const handleEdit = async (variant: ProductVariantItem) => {
     setForm({
       categoryId: variant.Product?.categoryId || "",
       subCategoryId: variant.Product?.subCategoryId || "",
@@ -278,29 +307,96 @@ export default function ProductVariants() {
       productColor: variant.productColor,
       stockQuantity: variant.stockQuantity,
       lowStock: variant.lowStock,
-      thumbImage1: null, // clear file objects
-      thumbImage2: null,
-      thumbImage3: null,
-      thumbImage4: null,
+      productVariantImage: null,
     });
 
-    // Directly set preview URLs
-    setPreviews({
-      thumbImage1: variant.thumbImage1 || "",
-      thumbImage2: variant.thumbImage2 || "",
-      thumbImage3: variant.thumbImage3 || "",
-      thumbImage4: variant.thumbImage4 || "",
-    });
-
+    setPreview(variant.productVariantImage || null);
     setEditingId(variant.productVariantId);
     setShowModal(true);
+
+    try {
+      const res = await getChildImages(variant.productVariantId);
+      if (res.success && Array.isArray(res.data)) {
+        setExistingChildImages(
+          res.data.map((img: any) => ({
+            id: img.childImageId,
+            url: `http://localhost:5000/uploads/${img.childImage}`,
+          }))
+        );
+      } else {
+        setExistingChildImages([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch child images", err);
+    }
   };
+
+  const handleDeleteChildImage = async (id: number) => {
+    try {
+      await deleteChildImage(id); // ID now matches backend PK
+      setExistingChildImages(
+        existingChildImages.filter((img) => img.id !== id)
+      );
+      toast.success("Child image deleted");
+    } catch (error) {
+      console.error("Error deleting child image", error);
+      toast.error("Failed to delete child image");
+    }
+  };
+
+  // --- Filters ---
+  const filteredSubCategories = subCategories.filter(
+    (sc) => sc.categoryId === Number(form.categoryId || 0)
+  );
+  const filteredProducts = products.filter(
+    (p) => p.subCategoryId === Number(form.subCategoryId || 0)
+  );
 
   return (
     <div className="p-5 border rounded-2xl">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Product Variants</h2>
+
+        <select
+          value={form.categoryId || ""}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              categoryId: e.target.value,
+              subCategoryId: "",
+              productId: "",
+            })
+          }
+          // className="w-full border rounded px-3 py-2 mb-3"
+        >
+          <option value="">Select Category</option>
+          {categories.map((c) => (
+            <option key={c.categoryId} value={c.categoryId}>
+              {c.categoryName}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={form.subCategoryId || ""}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              subCategoryId: e.target.value,
+              productId: "",
+            })
+          }
+          disabled={!form.categoryId}
+          // className="w-full border rounded px-3 py-2 mb-3"
+        >
+          <option value="">Select SubCategory</option>
+          {filteredSubCategories.map((sc) => (
+            <option key={sc.subCategoryId} value={sc.subCategoryId}>
+              {sc.subCategoryName}
+            </option>
+          ))}
+        </select>
         <button
           onClick={() => {
             resetForm();
@@ -321,7 +417,7 @@ export default function ProductVariants() {
             <th className="px-4 py-2">SubCategory Name</th>
             <th className="px-4 py-2">Product Name</th>
             <th className="px-4 py-2">Product Color</th>
-            <th className="px-4 py-2">Total Stock</th>
+            <th className="px-4 py-2">Product Stock</th>
             <th className="px-4 py-2">Low Stock</th>
             <th className="px-4 py-2">Actions</th>
           </tr>
@@ -383,7 +479,7 @@ export default function ProductVariants() {
               {editingId ? "Edit Variant" : "Add Variant"}
             </h2>
 
-            {/* Selects */}
+            {/* Dropdowns */}
             <select
               value={form.categoryId || ""}
               onChange={(e) =>
@@ -440,6 +536,31 @@ export default function ProductVariants() {
               ))}
             </select>
 
+            {/* Existing Child Images */}
+            {editingId && existingChildImages.length > 0 && (
+              <div className="mt-4">
+                <label className="block mb-2 text-sm font-semibold">
+                  Existing Child Images
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {existingChildImages.map((img) => (
+                    <div key={img.id} className="relative inline-block">
+                      <img
+                        src={img.url}
+                        className="h-16 w-16 object-cover rounded border"
+                      />
+                      <button
+                        onClick={() => handleDeleteChildImage(img.id)}
+                        className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Inputs */}
             <input
               type="text"
@@ -467,25 +588,66 @@ export default function ProductVariants() {
               className="w-full border rounded px-3 py-2 mb-3"
             />
 
-            {/* Images */}
-            <label className="block mb-1 text-sm mt-3">Variant Images</label>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="mb-3">
+            {/* Image Upload */}
+            <label className="block mb-1 text-sm mt-3">Variant Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="w-full border rounded px-3 py-2"
+            />
+            {preview && (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="h-20 w-20 object-cover rounded border"
+                />
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute top-0 right-0 bg-red-600 text-white text-xs px-1 rounded-full"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Child Images */}
+            <label className="block mt-4 text-sm font-semibold">
+              Thumb Images
+            </label>
+            {childImages.map((_, index) => (
+              <div key={index} className="flex items-center gap-3 mb-2">
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => handleImageChange(e, `thumbImage${i}`)}
+                  onChange={(e) => handleChildImageChange(e, index)}
                   className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
                 />
-                {previews[`thumbImage${i}`] && (
-                  <img
-                    src={previews[`thumbImage${i}`]}
-                    alt={`Preview ${i}`}
-                    className="mt-2 h-20 w-20 object-cover rounded border"
-                  />
+                {childPreview[index] && (
+                  <div className="relative inline-block">
+                    <img
+                      src={childPreview[index]}
+                      className="h-16 w-16 object-cover rounded border"
+                    />
+                    <button
+                      onClick={() => removeChildImage(index)}
+                      className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
+
+            <button
+              type="button"
+              onClick={addAnotherImageField}
+              className="mt-2 bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+            >
+              + Add Thumb Images
+            </button>
 
             <div className="mt-4 flex justify-center">
               <button
