@@ -6,10 +6,10 @@ import {
   createHomeBanner,
   updateHomeBanner,
   deleteHomeBanner,
-} from "./homebannerApi";
+} from "./CollectionBannerApi";
 
 const imageBaseUrl = `http://localhost:5000/uploads/`;
-export default function HomeBannerManager() {
+export default function CollectionbannerComponents() {
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -66,6 +66,10 @@ export default function CustomerTable() {
 
 
   return (
+    <div
+      className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6"
+    >
+      <h2 className="text-xl font-semibold">Customers</h2>
     <div className="p-4">
       {/* <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Customer List</h2>
@@ -167,6 +171,7 @@ export default function CustomerTable() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

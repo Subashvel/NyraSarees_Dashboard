@@ -82,28 +82,26 @@ export default function VariantBlock({
       toast.error("Maximum 10 images allowed");
       return;
     }
-
+  
     files.forEach((file) => {
       const img = new Image();
       img.src = URL.createObjectURL(file);
-
+  
       img.onload = () => {
         if (img.width !== 726 || img.height !== 967) {
-          // mark error for this image
-          setChildImageErrors((prev) => [
-            ...prev,
-            "Image must be exactly 726 × 967 pixels.",
-          ]);
-          setChildImages((prev) => [...prev, file]); // still track file if needed, or skip if you want
-          setChildPreviews((prev) => [...prev, img.src]);
-        } else {
-          setChildImageErrors((prev) => [...prev, ""]); // no error
-          setChildImages((prev) => [...prev, file]);
-          setChildPreviews((prev) => [...prev, img.src]);
+          toast.error(`"${file.name}" must be exactly 726 × 967 pixels.`);
+          return; // ⛔ Prevent adding
         }
+  
+        // Only add valid images
+        setChildImages((prev) => [...prev, file]);
+        setChildPreviews((prev) => [...prev, img.src]);
+        setChildImageErrors((prev) => [...prev, ""]);
       };
     });
   };
+  
+  
 
   // --- Remove child image before save ---
   const removeChildImage = (index: number) => {
@@ -222,7 +220,7 @@ export default function VariantBlock({
             }
           };
         }}
-        className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
+        className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
       />
 
       {variantImageError && (
@@ -230,7 +228,7 @@ export default function VariantBlock({
       )}
 
       {preview && (
-        <div className="preview-container mt-2 relative inline-block">
+        <div className="mt-2 relative inline-block">
           <img
             src={preview}
             alt="Preview"

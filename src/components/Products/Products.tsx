@@ -36,7 +36,6 @@ interface CategoryItem {
   categoryName: string;
 }
 
-
 const imageBaseUrl = `http://localhost:5000/uploads/`;
 
 export default function ProductComponents() {
@@ -203,31 +202,34 @@ export default function ProductComponents() {
 
   const handleSubmit = async () => {
     Object.entries(form).forEach(([name, value]) => validateField(name, value));
-  
+
     if (Object.values(errors).some((err) => err)) return;
     if (!form.productName.trim() || !form.subCategoryId || !form.categoryId) {
       toast.error("All Fields are required");
       return;
     }
-  
+
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => formData.append(key, value));
-  
+
     if (productImage) formData.append("productImage", productImage);
-  
+
     try {
       let productResponse;
       if (editingProduct) {
-        productResponse = await updateProduct(editingProduct.productId, formData);
+        productResponse = await updateProduct(
+          editingProduct.productId,
+          formData
+        );
         toast.success("Product updated successfully!");
       } else {
         productResponse = await createProduct(formData);
         toast.success("Product created successfully!");
       }
-  
+
       const productId =
         editingProduct?.productId || productResponse?.data?.productId;
-  
+
       // 🔹 Validate all variants before saving
       for (const variant of variants) {
         if (variant.variantImageError) {
@@ -239,7 +241,7 @@ export default function ProductComponents() {
           return;
         }
       }
-  
+
       // 🔹 Save Variants
       for (const variant of variants) {
         const variantData = new FormData();
@@ -247,13 +249,16 @@ export default function ProductComponents() {
         variantData.append("productColor", variant.productColor);
         variantData.append("stockQuantity", variant.stockQuantity || "0");
         variantData.append("lowStock", variant.lowStock || "0");
-  
+
         if (variant.productVariantImage) {
-          variantData.append("productVariantImage", variant.productVariantImage);
+          variantData.append(
+            "productVariantImage",
+            variant.productVariantImage
+          );
         }
-  
+
         const savedVariant = await createProductVariant(variantData);
-  
+
         // 🔹 Upload only valid child images
         if (variant.childImages?.length) {
           const validChildImages = variant.childImages.filter(
@@ -267,7 +272,7 @@ export default function ProductComponents() {
           }
         }
       }
-  
+
       setShowModal(false);
       resetForm();
       fetchProducts();
@@ -276,7 +281,6 @@ export default function ProductComponents() {
       console.error(err);
     }
   };
-  
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -332,16 +336,19 @@ export default function ProductComponents() {
           error = "Product Material cannot exceed 50 characters";
         break;
       case "productMrpPrice":
-        if (!value) error = "Product MRP Price is required";
-        else if (isNaN(Number(value)))
-          error = "Product MRP Price must be a number";
+        if (!value.trim()) {
+          error = "Product MRP Price is required";
+        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+          error = "Product MRP Price must be a valid number";
+        }
         break;
+
       case "productOfferPrice":
-        if (!value) error = "Product Offer Price is required";
-        else if (isNaN(Number(value)))
-          error = "Product Offer Price must be a number";
-        else if (Number(value) > Number(form.productMrpPrice))
-          error = "Product Offer Price cannot exceed MRP Price";
+        if (!value.trim()) {
+          error = "Product Product Offer Price is required";
+        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+          error = "Product Offer Price must be a valid number";
+        }
         break;
       default:
         break;
@@ -350,11 +357,33 @@ export default function ProductComponents() {
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
+  const filteredProducts = form.categoryId
+    ? products.filter((p) => String(p.categoryId) === String(form.categoryId))
+    : products;
+
   return (
     <div className="p-5 border border-gray-200 rounded-2xl lg:p-6">
       {/* Header */}
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold">Products</h2>
+        <select
+          value={form.categoryId || ""}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              categoryId: e.target.value,
+              subCategoryId: "",
+            })
+          }
+          // className="w-full border rounded px-3 py-2 mb-3"
+        >
+          <option value="">Select Category</option>
+          {categories.map((c) => (
+            <option key={c.categoryId} value={c.categoryId}>
+              {c.categoryName}
+            </option>
+          ))}
+        </select>
         <button
           onClick={openAddModal}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
@@ -384,14 +413,14 @@ export default function ProductComponents() {
                   Loading...
                 </td>
               </tr>
-            ) : products.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-6 py-4 text-center">
                   No products found.
                 </td>
               </tr>
             ) : (
-              products.map((p, index) => (
+              filteredProducts.map((p, index) => (
                 <tr key={p.productId} className="border-b">
                   <td className="px-4 py-2">{index + 1}</td>
                   <td className="px-4 py-2">
@@ -452,7 +481,7 @@ export default function ProductComponents() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
               {/* Category */}
               <div>
-              <label className="block mb-1 text-sm">Category Name</label>
+                <label className="block mb-1 text-sm">Category Name</label>
                 <select
                   name="categoryId"
                   value={form.categoryId}
@@ -475,7 +504,7 @@ export default function ProductComponents() {
 
               {/* Subcategory */}
               <div>
-              <label className="block mb-1 text-sm">Sub Category Name</label>
+                <label className="block mb-1 text-sm">Sub Category Name</label>
                 <select
                   name="subCategoryId"
                   value={form.subCategoryId}
@@ -499,99 +528,105 @@ export default function ProductComponents() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
               <div>
-              <label className="block mb-1 text-sm">Product Name</label>
-              {/* Other fields */}
-              <input
-                type="text"
-                name="productName"
-                value={form.productName}
-                onChange={handleChange}
-                placeholder="Product Name"
-                className={`w-full border rounded px-3 py-2 mb-1 ${
-                  errors.productName ? "border-red-500" : "border-gray-300"
-                }`}
-              />
-              {errors.productName && (
-                <p className="text-red-500 text-xs">{errors.productName}</p>
-              )}
+                <label className="block mb-1 text-sm">Product Name</label>
+                {/* Other fields */}
+                <input
+                  type="text"
+                  name="productName"
+                  value={form.productName}
+                  onChange={handleChange}
+                  placeholder="Product Name"
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.productName ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.productName && (
+                  <p className="text-red-500 text-xs">{errors.productName}</p>
+                )}
               </div>
 
               <div>
-              <label className="block mb-1 text-sm">Product Description</label>
-              <textarea
-                name="productDescription"
-                value={form.productDescription}
-                onChange={handleChange}
-                placeholder="Description"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-              />
-              {errors.productDescription && (
-                <p className="text-red-500 text-xs">
-                  {errors.productDescription}
-                </p>
-              )}
+                <label className="block mb-1 text-sm">
+                  Product Description
+                </label>
+                <textarea
+                  name="productDescription"
+                  value={form.productDescription}
+                  onChange={handleChange}
+                  placeholder="Description"
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                />
+                {errors.productDescription && (
+                  <p className="text-red-500 text-xs">
+                    {errors.productDescription}
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
               <div>
-              <label className="block mb-1 text-sm">Product Brand Name</label>
-              <input
-                type="text"
-                name="brandName"
-                value={form.brandName}
-                onChange={handleChange}
-                placeholder="Brand"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-              />
-              {errors.brandName && (
-                <p className="text-red-500 text-xs">{errors.brandName}</p>
-              )}
+                <label className="block mb-1 text-sm">Product Brand Name</label>
+                <input
+                  type="text"
+                  name="brandName"
+                  value={form.brandName}
+                  onChange={handleChange}
+                  placeholder="Brand"
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                />
+                {errors.brandName && (
+                  <p className="text-red-500 text-xs">{errors.brandName}</p>
+                )}
               </div>
               <div>
-              <label className="block mb-1 text-sm">Product Material</label>
-              <input
-                type="text"
-                name="material"
-                value={form.material}
-                onChange={handleChange}
-                placeholder="Material"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-              />
-              {errors.material && (
-                <p className="text-red-500 text-xs">{errors.material}</p>
-              )}
+                <label className="block mb-1 text-sm">Product Material</label>
+                <input
+                  type="text"
+                  name="material"
+                  value={form.material}
+                  onChange={handleChange}
+                  placeholder="Material"
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                />
+                {errors.material && (
+                  <p className="text-red-500 text-xs">{errors.material}</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-              <label className="block mb-1 text-sm">Product MRP Price</label>
-              <input
-                type="number"
-                name="productMrpPrice"
-                value={form.productMrpPrice}
-                onChange={handleChange}
-                placeholder="MRP Price"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-              />
-              {errors.productMrpPrice && (
-                <p className="text-red-500 text-xs">{errors.productMrpPrice}</p>
-              )}
+                <label className="block mb-1 text-sm">Product MRP Price</label>
+                <input
+                  type="text"
+                  name="productMrpPrice"
+                  value={form.productMrpPrice}
+                  onChange={handleChange}
+                  placeholder="MRP Price"
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                />
+                {errors.productMrpPrice && (
+                  <p className="text-red-500 text-xs">
+                    {errors.productMrpPrice}
+                  </p>
+                )}
               </div>
               <div>
-              <label className="block mb-1 text-sm">Product Offer Price</label>
-              <input
-                type="number"
-                name="productOfferPrice"
-                value={form.productOfferPrice}
-                onChange={handleChange}
-                placeholder="Offer Price"
-                className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
-              />
-              {errors.productOfferPrice && (
-                <p className="text-red-500 text-xs">
-                  {errors.productOfferPrice}
-                </p>
-              )}
+                <label className="block mb-1 text-sm">
+                  Product Offer Price
+                </label>
+                <input
+                  type="text"
+                  name="productOfferPrice"
+                  value={form.productOfferPrice}
+                  onChange={handleChange}
+                  placeholder="Offer Price"
+                  className="w-full border border-gray-300 rounded px-3 py-2 mb-3"
+                />
+                {errors.productOfferPrice && (
+                  <p className="text-red-500 text-xs">
+                    {errors.productOfferPrice}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -601,7 +636,7 @@ export default function ProductComponents() {
               type="file"
               accept="image/png, image/jpeg"
               onChange={handleImageChange}
-              className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300"
+              className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300"
             />
             {errors.productImage && (
               <p className="text-red-500 text-xs mt-1">{errors.productImage}</p>

@@ -86,14 +86,17 @@ export default function ProductStock() {
   };
 
   const handleSubmit = async () => {
-    if (!quantity || parseInt(quantity) <= 0) {
+    if (!quantity) {
       setError("Stock Quantity is required");
       return;
     }
-
+    if (!/^\d+$/.test(quantity)) {
+      setError("Stock Quantity should only be number");
+      return;
+    }
     if (modalType === "reduce" && selectedVariant) {
       if (parseInt(quantity) > (selectedVariant.stock ?? 0)) {
-        setError("Should not be above Available stock");
+        setError("Stock Quantity Should not be more than Available stock");
         return;
       }
     }
@@ -208,15 +211,31 @@ export default function ProductStock() {
             <div className="mb-3">
               <label className="block font-medium">Stock Quantity*</label>
               <input
-                type="number"
-                value={quantity}
-                onChange={(e) => {
-                  setQuantity(e.target.value);
-                  setError("");
-                }}
-                className="border w-full p-2 rounded"
-              />
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+  type="text" // keep as text to allow alphabet detection
+  value={quantity}
+  onChange={(e) => {
+    const value = e.target.value;
+    setQuantity(value);
+
+    // Inline Validation
+    if (!value) {
+      setError("Stock Quantity is required");
+    } else if (!/^\d+$/.test(value)) {
+      setError("Stock Quantity should only be number");
+    } else if (
+      modalType === "reduce" &&
+      selectedVariant &&
+      parseInt(value) > (selectedVariant.stock ?? 0)
+    ) {
+      setError("Stock Quantity should not be more than Available stock");
+    } else {
+      setError("");
+    }
+  }}
+  className="border w-full p-2 rounded"
+/>
+{error && <p className="text-red-500 text-sm">{error}</p>}
+
             </div>
 
             <div className="flex justify-end gap-2">

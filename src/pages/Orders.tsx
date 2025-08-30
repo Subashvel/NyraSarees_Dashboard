@@ -1,12 +1,13 @@
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import ProductComponents from "../components/Products/Products";
+import Orders from "../components/orders/orders";
 
-export default function Products() {
+
+export default function Order() {
   return (
     <>
       <PageMeta
-        title="React.js Profile Dashboard | TailAdmin - Next.js Admin Dashboard Template"
+        title="Dashboard"
         description="This is React.js Profile Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
       />
       {/* <PageBreadcrumb pageTitle="Profile" /> */}
@@ -16,7 +17,7 @@ export default function Products() {
         </h3> */}
         <div className="space-y-6">
 
-            <ProductComponents />
+            <Orders />
 
 
         </div>

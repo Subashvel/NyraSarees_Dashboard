@@ -1,92 +1,12 @@
-// import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-// import ComponentCard from "../../components/common/ComponentCard";
-// import Alert from "../../components/ui/alert/Alert";
-// import PageMeta from "../../components/common/PageMeta";
-
-
-// export default function Alerts() {
-//   return (
-//     <>
-//       <PageMeta
-//         title="React.js Alerts Dashboard | TailAdmin - React.js Admin Dashboard Template"
-//         description="This is React.js Alerts Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
-//       />
-//       <PageBreadcrumb pageTitle="Alerts" />
-//       <div className="space-y-5 sm:space-y-6">
-//         <ComponentCard title="Success Alert">
-//           <Alert
-//             variant="success"
-//             title="Success Message"
-//             message="Be cautious when performing this action."
-//             showLink={true}
-//             linkHref="/"
-//             linkText="Learn more"
-//           />
-//           <Alert
-//             variant="success"
-//             title="Success Message"
-//             message="Be cautious when performing this action."
-//             showLink={false}
-//           />
-//         </ComponentCard>
-//         <ComponentCard title="Warning Alert">
-//           <Alert
-//             variant="warning"
-//             title="Warning Message"
-//             message="Be cautious when performing this action."
-//             showLink={true}
-//             linkHref="/"
-//             linkText="Learn more"
-//           />
-//           <Alert
-//             variant="warning"
-//             title="Warning Message"
-//             message="Be cautious when performing this action."
-//             showLink={false}
-//           />
-//         </ComponentCard>{" "}
-//         <ComponentCard title="Error Alert">
-//           <Alert
-//             variant="error"
-//             title="Error Message"
-//             message="Be cautious when performing this action."
-//             showLink={true}
-//             linkHref="/"
-//             linkText="Learn more"
-//           />
-//           <Alert
-//             variant="error"
-//             title="Error Message"
-//             message="Be cautious when performing this action."
-//             showLink={false}
-//           />
-//         </ComponentCard>{" "}
-//         <ComponentCard title="Info Alert">
-//           <Alert
-//             variant="info"
-//             title="Info Message"
-//             message="Be cautious when performing this action."
-//             showLink={true}
-//             linkHref="/"
-//             linkText="Learn more"
-//           />
-//           <Alert
-//             variant="info"
-//             title="Info Message"
-//             message="Be cautious when performing this action."
-//             showLink={false}
-//           />
-//         </ComponentCard>
-//       </div>
-//     </>
-//   );
-// }
-
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
-import { createCoupon, deleteCoupon, getCoupons, updateCoupon } from "../../components/coupon/couponApi";
-
+import {
+  createCoupon,
+  deleteCoupon,
+  getCoupons,
+  updateCoupon,
+} from "../../components/coupon/couponApi";
 
 interface CouponItem {
   id: number;
@@ -103,7 +23,14 @@ const Coupons = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
-
+  const [errors, setErrors] = useState({
+    couponCodeName: "",
+    minimumPurchaseAmount: "",
+    discountUnit: "",
+    discountValue: "",
+    startDate: "",
+    endDate: "",
+  });
   const [formData, setFormData] = useState({
     couponCodeName: "",
     minimumPurchaseAmount: 0,
@@ -130,9 +57,54 @@ const Coupons = () => {
   }, []);
 
   // Handle form change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  
+    let errorMsg = "";
+  
+    // Inline validation
+    if (name === "couponCodeName") {
+      if (!value) {
+        errorMsg = "Coupon Code Field is required";
+      } else if (value.length < 4) {
+        errorMsg = "Coupon Code should be at minimum 4 characters";
+      }
+    }
+  
+    if (name === "minimumPurchaseAmount") {
+      if (!value) {
+        errorMsg = "Minimum amount of purchase is required";
+      } else if (!/^\d+$/.test(value)) {
+        errorMsg = "Minimum amount of purchase must be a number";
+      }
+    }
+  
+    if (name === "discountUnit") {
+      if (!value) {
+        errorMsg = "Discount Field is required";
+      }
+    }
+  
+    if (name === "discountValue") {
+      if (!value) {
+        errorMsg = "Discount Value Field is required";
+      } else if (!/^\d+$/.test(value)) {
+        errorMsg = "Discount Value must be a number";
+      }
+    }
+  
+    if (name === "startDate" || name === "endDate") {
+      if (!value) {
+        errorMsg = "Date Field is required";
+      }
+    }
+  
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
+  
 
   // Open modal for Add/Edit
   const openModal = (coupon?: CouponItem) => {
@@ -155,20 +127,73 @@ const Coupons = () => {
 
   // Save (Create / Update)
   const handleSave = async () => {
+    let newErrors = {
+      couponCodeName: "",
+      minimumPurchaseAmount: "",
+      discountUnit: "",
+      discountValue: "",
+      startDate: "",
+      endDate: "",
+    };
+    let isValid = true;
+  
+    if (!formData.couponCodeName) {
+      newErrors.couponCodeName = "Coupon Code Field is required";
+      isValid = false;
+    } else if (formData.couponCodeName.length < 4) {
+      newErrors.couponCodeName = "Coupon Code should be at minimum 4 characters";
+      isValid = false;
+    }
+  
+    if (!formData.minimumPurchaseAmount) {
+      newErrors.minimumPurchaseAmount =
+        "Minimum amount of purchase must be a number";
+      isValid = false;
+    } else if (isNaN(Number(formData.minimumPurchaseAmount))) {
+      newErrors.minimumPurchaseAmount =
+        "Minimum amount of purchase must be a number";
+      isValid = false;
+    }
+  
+    if (!formData.discountUnit) {
+      newErrors.discountUnit = "Discount Field is required";
+      isValid = false;
+    }
+  
+    if (!formData.discountValue) {
+      newErrors.discountValue = "Discount Value must be a number";
+      isValid = false;
+    } else if (isNaN(Number(formData.discountValue))) {
+      newErrors.discountValue = "Discount Value must be a number";
+      isValid = false;
+    }
+  
+    if (!formData.startDate) {
+      newErrors.startDate = "Date Field is required";
+      isValid = false;
+    }
+  
+    if (!formData.endDate) {
+      newErrors.endDate = "Date Field is required";
+      isValid = false;
+    }
+  
+    setErrors(newErrors);
+    if (!isValid) return;
+  
     try {
       if (editingCoupon) {
         await updateCoupon(editingCoupon.id, formData);
-        toast.success("Coupon updated successfully");
       } else {
         await createCoupon(formData);
-        toast.success("Coupon created successfully");
       }
       fetchCoupons();
       setShowModal(false);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+    } catch {
+      toast.error("Failed to save coupon");
     }
   };
+  
 
   // Delete
   const handleDelete = (id: number) => {
@@ -192,6 +217,7 @@ const Coupons = () => {
   };
 
   return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold">Coupons</h2>
@@ -256,59 +282,93 @@ const Coupons = () => {
             <h3 className="text-lg font-bold mb-4">
               {editingCoupon ? "Edit Coupon" : "Add Coupon"}
             </h3>
-
+            <label className="block mb-1 text-sm">Coupon Code Name</label>
             <input
               type="text"
               name="couponCodeName"
-              placeholder="Coupon Code"
               value={formData.couponCodeName}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.couponCodeName ? "border-red-500" : ""
+              }`}
             />
+            {errors.couponCodeName && (
+              <p className="text-red-500 text-sm">{errors.couponCodeName}</p>
+            )}
 
+            <label className="block mb-1 text-sm">
+              Minimum amount of purchase
+            </label>
             <input
-              type="number"
+              type="text"
               name="minimumPurchaseAmount"
               placeholder="Minimum Purchase"
               value={formData.minimumPurchaseAmount}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.minimumPurchaseAmount ? "border-red-500" : ""
+              }`}
             />
-
+            {errors.minimumPurchaseAmount && (
+              <p className="text-red-500 text-sm">
+                {errors.minimumPurchaseAmount}
+              </p>
+            )}
+            <label className="block mb-1 text-sm">Discount Unit</label>
             <select
               name="discountUnit"
               value={formData.discountUnit}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.discountUnit ? "border-red-500" : ""
+              }`}
             >
               <option value="percentage">Percentage</option>
-              <option value="flat">Flat</option>
+              <option value="flat">Rupees</option>
             </select>
-
+            {errors.discountUnit && (
+              <p className="text-red-500 text-sm">{errors.discountUnit}</p>
+            )}
+            <label className="block mb-1 text-sm">Discounted Value</label>
             <input
-              type="number"
+              type="text"
               name="discountValue"
               placeholder="Discount Value"
               value={formData.discountValue}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.discountValue ? "border-red-500" : ""
+              }`}
             />
-
+            {errors.discountValue && (
+              <p className="text-red-500 text-sm">{errors.discountValue}</p>
+            )}
+            <label className="block mb-1 text-sm">Start Date</label>
             <input
               type="date"
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.startDate ? "border-red-500" : ""
+              }`}
             />
-
+            {errors.startDate && (
+              <p className="text-red-500 text-sm">{errors.startDate}</p>
+            )}
+            <label className="block mb-1 text-sm">End Date</label>
             <input
               type="date"
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              className="border p-2 w-full mb-2"
+              className={`border p-2 w-full mb-1 ${
+                errors.endDate ? "border-red-500" : ""
+              }`}
             />
+            {errors.endDate && (
+              <p className="text-red-500 text-sm">{errors.endDate}</p>
+            )}
 
             <div className="flex justify-end gap-2">
               <button
@@ -327,6 +387,7 @@ const Coupons = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };

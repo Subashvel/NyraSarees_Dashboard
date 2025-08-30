@@ -105,8 +105,8 @@ const othersItems: NavItem[] = [
   // },
   {
     icon: <BoxCubeIcon />,
-    name: "Orders",
-    path: "/avatars",
+    name: "New Orders",
+    path: "/product-orders",
     // subItems: [
     //   { name: "Alerts", path: "/alerts", pro: false },
     //   { name: "Avatar", path: "/avatars", pro: false },
@@ -124,6 +124,31 @@ const othersItems: NavItem[] = [
   //     { name: "Sign Up", path: "/signup", pro: false },
   //   ],
   // },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Orders",
+    path: "/view-orders",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Package Orders",
+    path: "/productpacking",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Dispatched Orders",
+    path: "/productdispatch",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Out Of Delivery Orders",
+    path: "/productdelivery",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Delivered Orders",
+    path: "/productcomplete",
+  }
 ];
 
 const bannerItems: NavItem[] = [
@@ -132,6 +157,12 @@ const bannerItems: NavItem[] = [
     name: "Banner Images",
     path: "/homebanner",
   },
+  {
+    icon: <ProdIcon />,
+    name: "Collection Banner",
+    path: "/collectionbanner",
+  },
+
 ];
 
 const customerItems: NavItem[] = [

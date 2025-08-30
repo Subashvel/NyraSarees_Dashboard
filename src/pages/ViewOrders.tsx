@@ -1,10 +1,9 @@
-import CategoryComponents from "../components/categories/Categories";
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
-
-
 import PageMeta from "../components/common/PageMeta";
+import ViewOrders from "../components/ViewOrders/ViewOrders";
 
-export default function Categories() {
+
+export default function Products() {
   return (
     <>
       <PageMeta
@@ -18,7 +17,7 @@ export default function Categories() {
         </h3> */}
         <div className="space-y-6">
 
-            <CategoryComponents />
+            <ViewOrders />
 
 
         </div>

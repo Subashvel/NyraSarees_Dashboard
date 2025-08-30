@@ -10,7 +10,7 @@ interface OrderItem {
   paymentStatus: "Pending" | "Paid" | "Failed";
 }
 
-export default function Orders() {
+export default function PackageOrders() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,7 @@ export default function Orders() {
   if (loading) return <p>Loading...</p>;
   return (
     <div className="p-5 border rounded-2xl">
-      <h2 className="text-xl font-semibold mb-4">Orders</h2>
+      <h2 className="text-xl font-semibold mb-4">Package Orders</h2>
 
       <table className="min-w-full text-sm text-left">
         <thead className="bg-gray-100 border-b border-gray-200">
@@ -46,6 +46,7 @@ export default function Orders() {
             <th className="px-4 py-2">Customer Name</th>
             <th className="px-4 py-2">Address</th>
             <th className="px-4 py-2">Payment Status</th>
+            <th className="px-4 py-2">Delivery Status</th>
             <th className="px-4 py-2">Action</th>
           </tr>
         </thead>

@@ -1,10 +1,9 @@
-import CategoryComponents from "../components/categories/Categories";
 // import PageBreadcrumb from "../components/common/PageBreadCrumb";
-
-
+import CollectionbannerComponents from "../components/CollectionBanner/CollectionBanner";
 import PageMeta from "../components/common/PageMeta";
 
-export default function Categories() {
+
+export default function Homebanner() {
   return (
     <>
       <PageMeta
@@ -18,7 +17,7 @@ export default function Categories() {
         </h3> */}
         <div className="space-y-6">
 
-            <CategoryComponents />
+            <CollectionbannerComponents />
 
 
         </div>

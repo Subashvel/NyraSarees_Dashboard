@@ -33,8 +33,16 @@ import Homebanner from "./pages/Homebanner";
 import SubCategories from "./pages/SubCategories";
 import ProductVariant from "./pages/ProductVariant";
 import CustomerTable from "./pages/Customer";
-import Coupons from "./pages/UiElements/Alerts";
+import Coupons from "./pages/UiElements/Alerts"; //Coupons
 import ProductStock from "./pages/ProductStock";
+import Orders from "./pages/Orders";
+import ViewOrders from "./pages/ViewOrders";
+import PackageOrders from "./pages/PackageOrders";
+import DispatchedOrders from "./pages/DispatchedOrders";
+import OutOfDeliveryOrders from "./pages/OutOfDeliveryOrders";
+import DeliveredOrders from "./pages/DeliveredOrders";
+import CollectionbannerComponents from "./pages/CollectionBanner";
+
 // import Coupons from "./components/coupon/coupon";
 
 export default function App() {
@@ -87,6 +95,13 @@ export default function App() {
             <Route path="/product-variants" element={<ProductVariant />} />
             <Route path="/customers" element={<CustomerTable />} />
             <Route path="/product-stock" element={<ProductStock />} />
+            <Route path="/product-orders" element={<Orders />} />
+            <Route path="/view-orders" element={<ViewOrders />} />
+            <Route path="/productpacking" element={<PackageOrders />} />
+            <Route path="/productdispatch" element={<DispatchedOrders />} />
+            <Route path="/productdelivery" element={<OutOfDeliveryOrders />} />
+            <Route path="/productcomplete" element={<DeliveredOrders />} />
+            <Route path="/collectionbanner" element={<CollectionbannerComponents />} />
 
           </Route>
 

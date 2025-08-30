@@ -221,7 +221,7 @@ export default function ProductVariants() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-  
+
     if (childImages.length >= 10) {
       setChildImageErrors((prev) => {
         const newErrors = [...prev];
@@ -230,10 +230,10 @@ export default function ProductVariants() {
       });
       return;
     }
-  
+
     const img = new Image();
     img.src = URL.createObjectURL(file);
-  
+
     img.onload = () => {
       if (img.width !== 726 || img.height !== 967) {
         setChildImageErrors((prev) => {
@@ -243,25 +243,23 @@ export default function ProductVariants() {
         });
         return;
       }
-  
+
       // ✅ Clear error if valid
       setChildImageErrors((prev) => {
         const newErrors = [...prev];
         newErrors[index] = "";
         return newErrors;
       });
-  
+
       const newImages = [...childImages];
       newImages[index] = file;
       setChildImages(newImages);
-  
+
       const newPreviews = [...childPreview];
       newPreviews[index] = img.src;
       setChildPreview(newPreviews);
     };
   };
-  
-  
 
   const addAnotherImageField = () => {
     if (childImages.length >= 10) {
@@ -272,7 +270,6 @@ export default function ProductVariants() {
     setChildPreview([...childPreview, ""]);
     setChildImageErrors([...childImageErrors, ""]); // ✅ add error placeholder
   };
-  
 
   const removeChildImage = (index: number) => {
     const newImages = [...childImages];
@@ -285,39 +282,42 @@ export default function ProductVariants() {
 
   // --- Submit ---
   const handleSubmit = async () => {
+    const validationErrors = {
+      categoryId: form.categoryId ? "" : "Category name is required",
+      subCategoryId: form.subCategoryId ? "" : "Subcategory name is required",
+      productId: form.productId ? "" : "Product name is required",
+      productColor: form.productColor ? "" : "Color is required",
+      stockQuantity: !form.stockQuantity
+        ? "Stock quantity is required"
+        : !/^\d+(\.\d+)?$/.test(form.stockQuantity)
+        ? "Stock quantity must be a number"
+        : "",
+      lowStock: !form.lowStock
+        ? "Low stock is required"
+        : !/^\d+$/.test(form.lowStock)
+        ? "Low stock must be a number"
+        : "",
+      productVariantImage: form.productVariantImage
+        ? ""
+        : errors.productVariantImage,
+    };
+  
+    setErrors(validationErrors);
+  
+    // stop if any errors exist
+    if (Object.values(validationErrors).some((err) => err)) return;
+  
     try {
-      if (
-        !form.categoryId ||
-        !form.subCategoryId ||
-        !form.productId ||
-        !form.productColor
-      ) {
-        setErrors({
-          categoryId: form.categoryId ? "" : "Category name is required",
-          subCategoryId: form.subCategoryId
-            ? ""
-            : "Subcategory name is required",
-          productId: form.productId ? "" : "Product name is required",
-          productColor: form.productColor ? "" : "Color is required",
-          stockQuantity: form.stockQuantity ? "" : "Stock quantity is required",
-          lowStock: form.lowStock ? "" : "Low stock is required",
-          productVariantImage: form.productVariantImage
-            ? ""
-            : errors.productVariantImage,
-        });
-        return;
-      }
-
       const formData = new FormData();
       formData.append("productId", form.productId.toString());
       formData.append("productColor", form.productColor);
       formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
       formData.append("lowStock", form.lowStock?.toString() || "0");
-
+  
       if (form.productVariantImage instanceof File) {
         formData.append("productVariantImage", form.productVariantImage);
       }
-
+  
       let savedVariant;
       if (editingId) {
         savedVariant = await updateProductVariant(editingId, formData);
@@ -326,8 +326,7 @@ export default function ProductVariants() {
         savedVariant = await createProductVariant(formData);
         toast.success("Variant created successfully!");
       }
-
-      // Upload child images if present
+  
       if (childImages.length > 0 && savedVariant?.data?.productVariantId) {
         await uploadChildImages(
           savedVariant.data.productVariantId,
@@ -335,7 +334,7 @@ export default function ProductVariants() {
         );
         toast.success("Child images uploaded!");
       }
-
+  
       resetForm();
       fetchVariants();
     } catch (err) {
@@ -343,6 +342,7 @@ export default function ProductVariants() {
       toast.error("Failed to save variant");
     }
   };
+  
 
   // --- Delete ---
   const handleDelete = (id: number) => {
@@ -557,237 +557,316 @@ export default function ProductVariants() {
             <h2 className="text-lg font-semibold mb-4">
               {editingId ? "Edit Variant" : "Add Variant"}
             </h2>
-
-            {/* Dropdowns */}
-            <select
-              value={form.categoryId || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({
-                  ...form,
-                  categoryId: value,
-                  subCategoryId: "",
-                  productId: "",
-                });
-                setErrors((prev) => ({
-                  ...prev,
-                  categoryId: value ? "" : "Category name is required",
-                }));
-              }}
-              className={`w-full border rounded px-3 py-2 mb-1 ${
-                errors.categoryId ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Select Category</option>
-              {categories.map((c) => (
-                <option key={c.categoryId} value={c.categoryId}>
-                  {c.categoryName}
-                </option>
-              ))}
-            </select>
-            {errors.categoryId && (
-              <p className="text-red-500 text-xs">{errors.categoryId}</p>
-            )}
-
-            <select
-              value={form.subCategoryId || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({ ...form, subCategoryId: value, productId: "" });
-                setErrors((prev) => ({
-                  ...prev,
-                  subCategoryId: value ? "" : "Subcategory name is required",
-                }));
-              }}
-              className={`w-full border rounded px-3 py-2 mb-1 ${
-                errors.subCategoryId ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Select SubCategory</option>
-              {filteredSubCategories.map((sc) => (
-                <option key={sc.subCategoryId} value={sc.subCategoryId}>
-                  {sc.subCategoryName}
-                </option>
-              ))}
-            </select>
-            {errors.subCategoryId && (
-              <p className="text-red-500 text-xs">{errors.subCategoryId}</p>
-            )}
-
-            <select
-              value={form.productId || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({ ...form, productId: Number(value) });
-                setErrors((prev) => ({
-                  ...prev,
-                  productId: value ? "" : "Product is required",
-                }));
-              }}
-              disabled={!form.subCategoryId}
-              className={`w-full border rounded px-3 py-2 mb-1 
-    ${errors.productId ? "border-red-500" : "border-gray-300"}`}
-            >
-              <option value="">Select Product</option>
-              {filteredProducts.map((p) => (
-                <option key={p.productId} value={p.productId}>
-                  {p.productName}
-                </option>
-              ))}
-            </select>
-            {errors.productId && (
-              <p className="text-red-500 text-xs">{errors.productId}</p>
-            )}
-
-            {/* Existing Child Images */}
-            {editingId && existingChildImages.length > 0 && (
-              <div className="mt-4">
-                <label className="block mb-2 text-sm font-semibold">
-                  Existing Child Images
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {existingChildImages.map((img) => (
-                    <div key={img.id} className="relative inline-block">
-                      <img
-                        src={img.url}
-                        className="h-16 w-16 object-cover rounded border"
-                      />
-                      <button
-                        onClick={() => handleDeleteChildImage(img.id)}
-                        className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
-                      >
-                        ✕
-                      </button>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              <div>
+                {/* Dropdowns */}
+                <label className="block mb-1 text-sm">Category Name</label>
+                <select
+                  value={form.categoryId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({
+                      ...form,
+                      categoryId: value,
+                      subCategoryId: "",
+                      productId: "",
+                    });
+                    setErrors((prev) => ({
+                      ...prev,
+                      categoryId: value ? "" : "Category name is required",
+                    }));
+                  }}
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.categoryId ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((c) => (
+                    <option key={c.categoryId} value={c.categoryId}>
+                      {c.categoryName}
+                    </option>
                   ))}
-                </div>
-              </div>
-            )}
+                </select>
 
-            {/* Inputs */}
-            <input
-              type="text"
-              placeholder="Color"
-              value={form.productColor || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({ ...form, productColor: value });
-                setErrors((prev) => ({
-                  ...prev,
-                  productColor: value.trim() ? "" : "Color is required",
-                }));
-              }}
-              className={`w-full border rounded px-3 py-2 mb-1 ${
-                errors.productColor ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.productColor && (
-              <p className="text-red-500 text-xs">{errors.productColor}</p>
-            )}
-            <input
-              type="number"
-              placeholder="Stock Quantity"
-              value={form.stockQuantity || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({ ...form, stockQuantity: value });
-                setErrors((prev) => ({
-                  ...prev,
-                  stockQuantity: value ? "" : "Stock quantity is required",
-                }));
-              }}
-              className={`w-full border rounded px-3 py-2 mb-1 ${
-                errors.stockQuantity ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.stockQuantity && (
-              <p className="text-red-500 text-xs">{errors.stockQuantity}</p>
-            )}
-            <input
-              type="number"
-              placeholder="Low Stock"
-              value={form.lowStock || ""}
-              onChange={(e) => {
-                const value = e.target.value;
-                setForm({ ...form, lowStock: value });
-                setErrors((prev) => ({
-                  ...prev,
-                  lowStock: value ? "" : "Low stock is required",
-                }));
-              }}
-              className={`w-full border rounded px-3 py-2 mb-1 ${
-                errors.lowStock ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.lowStock && (
-              <p className="text-red-500 text-xs">{errors.lowStock}</p>
-            )}
+                {errors.categoryId && (
+                  <p className="text-red-500 text-xs">{errors.categoryId}</p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm">Sub Category Name</label>
+                <select
+                  value={form.subCategoryId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, subCategoryId: value, productId: "" });
+                    setErrors((prev) => ({
+                      ...prev,
+                      subCategoryId: value
+                        ? ""
+                        : "Subcategory name is required",
+                    }));
+                  }}
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.subCategoryId ? "border-red-500" : "border-gray-300"
+                  }`}
+                >
+                  <option value="">Select SubCategory</option>
+                  {filteredSubCategories.map((sc) => (
+                    <option key={sc.subCategoryId} value={sc.subCategoryId}>
+                      {sc.subCategoryName}
+                    </option>
+                  ))}
+                </select>
+
+                {errors.subCategoryId && (
+                  <p className="text-red-500 text-xs">{errors.subCategoryId}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              <div>
+                <label className="block mb-1 text-sm">Product Name</label>
+                <select
+                  value={form.productId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, productId: Number(value) });
+                    setErrors((prev) => ({
+                      ...prev,
+                      productId: value ? "" : "Product is required",
+                    }));
+                  }}
+                  disabled={!form.subCategoryId}
+                  className={`w-full border rounded px-3 py-2 mb-1 
+    ${errors.productId ? "border-red-500" : "border-gray-300"}`}
+                >
+                  <option value="">Select Product</option>
+                  {filteredProducts.map((p) => (
+                    <option key={p.productId} value={p.productId}>
+                      {p.productName}
+                    </option>
+                  ))}
+                </select>
+                {errors.productId && (
+                  <p className="text-red-500 text-xs">{errors.productId}</p>
+                )}
+              </div>
+
+              {/* Existing Child Images */}
+              {editingId && existingChildImages.length > 0 && (
+                <div className="mt-4">
+                  <label className="block mb-2 text-sm font-semibold">
+                    Existing Child Images
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {existingChildImages.map((img) => (
+                      <div key={img.id} className="relative inline-block">
+                        <img
+                          src={img.url}
+                          className="h-16 w-16 object-cover rounded border"
+                        />
+                        <button
+                          onClick={() => handleDeleteChildImage(img.id)}
+                          className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="block mb-1 text-sm">Product Color</label>
+                {/* Inputs */}
+                <input
+                  type="text"
+                  placeholder="Color"
+                  value={form.productColor || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, productColor: value });
+                    setErrors((prev) => ({
+                      ...prev,
+                      productColor: value.trim() ? "" : "Color is required",
+                    }));
+                  }}
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.productColor ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.productColor && (
+                  <p className="text-red-500 text-xs">{errors.productColor}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
+              <div>
+                <label className="block mb-1 text-sm">
+                  Product Stock Quantity
+                </label>
+                <input
+                  type="text"
+                  placeholder="Stock Quantity"
+                  value={form.stockQuantity || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, stockQuantity: value });
+                  
+                    let error = "";
+                    if (!value) {
+                      error = "Stock quantity is required";
+                    } else if (!/^\d+(\.\d+)?$/.test(value)) {
+                      error = "Stock quantity must be a number";
+                    }
+                  
+                    setErrors((prev) => ({
+                      ...prev,
+                      stockQuantity: error,
+                    }));
+                  }}
+                  
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.stockQuantity ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.stockQuantity && (
+                  <p className="text-red-500 text-xs">{errors.stockQuantity}</p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm">
+                  Product Low Stock Quantity
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Low Stock"
+                  value={form.lowStock || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, lowStock: value });
+                  
+                    let error = "";
+                    if (!value) {
+                      error = "Low stock is required";
+                    } else if (!/^\d+$/.test(value)) {
+                      error = "Low stock must be a number";
+                    }
+                  
+                    setErrors((prev) => ({
+                      ...prev,
+                      lowStock: error,
+                    }));
+                  }}
+                  
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.lowStock ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
+                {errors.lowStock && (
+                  <p className="text-red-500 text-xs">{errors.lowStock}</p>
+                )}
+              </div>
+            </div>
 
             {/* Image Upload */}
-            <label className="block mb-1 text-sm mt-3">Variant Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full border rounded px-3 py-2"
-            />
-            {preview && (
-              <div className="mt-2 relative inline-block">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="h-20 w-20 object-cover rounded border"
-                />
-                <button
-                  onClick={handleRemoveImage}
-                  className="absolute top-0 right-0 bg-red-600 text-white text-xs px-1 rounded-full"
-                >
-                  ✕
-                </button>
+            <div className="mb-10">
+              <label className="block mb-1 text-sm font-medium">
+                Variant Image (726 × 967)
+              </label>
+              <div
+                className="preview-container"
+                onClick={() =>
+                  document.getElementById("variantImageInput")?.click()
+                }
+              >
+                {preview ? (
+                  <div className="mt-2 relative inline-block">
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="h-full w-full object-cover rounded"
+                    />
+                    <button
+                      onClick={handleRemoveImage}
+                      className="absolute top-0 right-0 bg-red-600 text-white text-xs px-1 rounded-full"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-10 w-10 mb-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12v9m-7-4l7-7 7 7"
+                      />
+                    </svg>
+                    Upload Image
+                  </div>
+                )}
               </div>
-            )}
-            {errors.productVariantImage && (
-              <p className="text-red-500 text-xs">
-                {errors.productVariantImage}
-              </p>
-            )}
+              <input
+                type="file"
+                id="variantImageInput"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              {errors.productVariantImage && (
+                <p className="text-red-500 text-xs">
+                  {errors.productVariantImage}
+                </p>
+              )}
+            </div>
 
             {/* Child Images */}
             <label className="block mt-4 text-sm font-semibold">
               Thumb Images
             </label>
             {childImages.map((_, index) => (
-  <div key={index} className="flex flex-col gap-1 mb-2">
-    <div className="flex items-center gap-3">
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => handleChildImageChange(e, index)}
-        className="focus:border-ring-brand-300 h-11 w-full overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
-      />
+              <div key={index} className="flex flex-col gap-1 mb-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleChildImageChange(e, index)}
+                    className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
+                  />
 
-      {childPreview[index] && (
-        <div className="relative inline-block">
-          <img
-            src={childPreview[index]}
-            className="h-16 w-16 object-cover rounded border"
-          />
-          <button
-            onClick={() => removeChildImage(index)}
-            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-    </div>
+                  {childPreview[index] && (
+                    <div className="relative inline-block">
+                      <img
+                        src={childPreview[index]}
+                        className="h-16 w-16 object-cover rounded border"
+                      />
+                      <button
+                        onClick={() => removeChildImage(index)}
+                        className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-    {/* 🔹 Show error here */}
-    {childImageErrors[index] && (
-      <p className="text-red-500 text-xs">{childImageErrors[index]}</p>
-    )}
-  </div>
-))}
+                {/* 🔹 Show error here */}
+                {childImageErrors[index] && (
+                  <p className="text-red-500 text-xs">
+                    {childImageErrors[index]}
+                  </p>
+                )}
+              </div>
+            ))}
 
             <button
               type="button"

@@ -13,7 +13,6 @@ export interface User {
 // Fetch all users
 export const getUsers = async (): Promise<User[]> => {
   const response = await axios.get(API_URL);
-  // API returns an array directly
   return response.data;
 };
 
@@ -25,7 +24,6 @@ export const getUserById = async (id: number): Promise<User> => {
 
 // Create new user
 export const createUser = async (userData: User) => {
-  // Since registration endpoint is /register
   const response = await axios.post(`${API_URL}/register`, userData);
   return response.data;
 };
