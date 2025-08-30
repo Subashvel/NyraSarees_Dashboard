@@ -6,6 +6,8 @@ import { getCategories } from "../../components/categories/categoryApi";
 import { getSubCategories } from "../../components/subCategories/subCategoryApi";
 import { getProductVariants } from "../../components/ProductVariant/productVariantApi";
 import { useNavigate } from "react-router-dom";
+import { getCollectionBanners } from "../../components/CollectionBanner/CollectionBannerApi"
+
 interface DashboardCardProps {
   color: string;
   title: string;
@@ -20,17 +22,19 @@ export default function Dashboard() {
     productVariants: 0,
     bannerImages: 0,
     customers: 0,
+    CollectionBanners: 0,
   });
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [categories, subCategories, productVariants, banners, customers] = await Promise.all([
+        const [categories, subCategories, productVariants, banners, customers, collections] = await Promise.all([
           getCategories(),
           getSubCategories(),
           getProductVariants(),
           getHomeBanners(),
           getUsers(),
+          getCollectionBanners(),
         ]);
 
         setCounts({
@@ -39,6 +43,7 @@ export default function Dashboard() {
         productVariants: productVariants.data ? productVariants.data.length : productVariants.length,
           bannerImages: banners.length,
           customers: customers.length,
+          CollectionBanners : collections.length,
           
         });
       } catch (err) {
@@ -55,6 +60,7 @@ export default function Dashboard() {
       <DashboardCard color="bg-orange-600" title="Product Variant" value={counts.productVariants} icon="📦" path="/product-variants" />
       <DashboardCard color="bg-blue-600" title="Banner Images" value={counts.bannerImages} icon="🖼️" path="/homebanner" />
       <DashboardCard color="bg-purple-600" title="Customers" value={counts.customers} icon="👨‍💼" path="/customers" />
+      <DashboardCard color="bg-yellow-600" title="Collection Banner Images" value={counts.CollectionBanners} icon="🖼️" path="/collectionbanner" />
     </div>
   );
 }
@@ -73,3 +79,5 @@ function DashboardCard({ color, title, value, icon, path }: DashboardCardProps) 
     </div>
   );
 }
+
+

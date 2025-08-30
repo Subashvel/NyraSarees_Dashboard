@@ -35,6 +35,9 @@ interface ProductItem {
 }
 
 interface ProductVariantItem {
+  isTrending: boolean;
+  isBestSeller: boolean;
+  isNewArrival: boolean;
   productVariantId: number;
   productId: number;
   variantId: number;
@@ -62,7 +65,7 @@ export default function ProductVariants() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [subCategories, setSubCategories] = useState<SubCategoryItem[]>([]);
   const [products, setProducts] = useState<ProductItem[]>([]);
-  const [form, setForm] = useState<any>({});
+  // const [form, setForm] = useState<any>({});
   const [preview, setPreview] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -72,6 +75,11 @@ export default function ProductVariants() {
   const [existingChildImages, setExistingChildImages] = useState<
     { id: number; url: string }[]
   >([]);
+  const [form, setForm] = useState<any>({
+  isNewArrival: false,
+  isBestSeller: false,
+  isTrending: false,
+});
   const [childImageErrors, setChildImageErrors] = useState<string[]>([]);
   const [errors, setErrors] = useState({
     categoryId: "",
@@ -266,9 +274,9 @@ export default function ProductVariants() {
       toast.error("Maximum 10 images allowed");
       return;
     }
-    setChildImages([...childImages, new File([], "")]); // placeholder
+    setChildImages([...childImages, new File([], "")]); 
     setChildPreview([...childPreview, ""]);
-    setChildImageErrors([...childImageErrors, ""]); // ✅ add error placeholder
+    setChildImageErrors([...childImageErrors, ""]); 
   };
 
   const removeChildImage = (index: number) => {
@@ -317,7 +325,9 @@ export default function ProductVariants() {
       if (form.productVariantImage instanceof File) {
         formData.append("productVariantImage", form.productVariantImage);
       }
-  
+      formData.append("isNewArrival", String(form.isNewArrival));
+formData.append("isBestSeller", String(form.isBestSeller));
+formData.append("isTrending", String(form.isTrending));
       let savedVariant;
       if (editingId) {
         savedVariant = await updateProductVariant(editingId, formData);
@@ -334,6 +344,8 @@ export default function ProductVariants() {
         );
         toast.success("Child images uploaded!");
       }
+
+      
   
       resetForm();
       fetchVariants();
@@ -375,6 +387,9 @@ export default function ProductVariants() {
       stockQuantity: variant.stockQuantity,
       lowStock: variant.lowStock,
       productVariantImage: null,
+      isNewArrival: variant.isNewArrival || false,
+  isBestSeller: variant.isBestSeller || false,
+  isTrending: variant.isTrending || false,
     });
 
     setPreview(variant.productVariantImage || null);
@@ -547,7 +562,7 @@ export default function ProductVariants() {
       {/* Modal Form */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 ccc sss">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl p-8 relative mt-10">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl p-8 relative mt-10 mb-10">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 right-3"
@@ -828,6 +843,51 @@ export default function ProductVariants() {
                 </p>
               )}
             </div>
+
+            <div className="mb-6">
+  <label className="block mb-2 text-sm font-medium">Tags</label>
+  <div className="flex items-center gap-4">
+    <label className="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        name="isNewArrival"
+        checked={form.isNewArrival || false}
+        onChange={(e) =>
+          setForm({ ...form, isNewArrival: e.target.checked })
+        }
+        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+      />
+      <span>New Arrival</span>
+    </label>
+
+    <label className="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        name="isBestSeller"
+        checked={form.isBestSeller || false}
+        onChange={(e) =>
+          setForm({ ...form, isBestSeller: e.target.checked })
+        }
+        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+      />
+      <span>Best Seller</span>
+    </label>
+
+    <label className="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        name="isTrending"
+        checked={form.isTrending || false}
+        onChange={(e) =>
+          setForm({ ...form, isTrending: e.target.checked })
+        }
+        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+      />
+      <span>Trending</span>
+    </label>
+  </div>
+</div>
+
 
             {/* Child Images */}
             <label className="block mt-4 text-sm font-semibold">

@@ -195,7 +195,7 @@ export default function VariantBlock({
       {errors.lowStock && (
         <p className="text-red-500 text-xs">{errors.lowStock}</p>
       )}
-
+      <div>
       <label className="block mb-1 text-sm mt-3">Variant Image</label>
 
       <input
@@ -227,6 +227,7 @@ export default function VariantBlock({
         <p className="text-red-500 text-xs mt-1">{variantImageError}</p>
       )}
 
+      </div>
       {preview && (
         <div className="mt-2 relative inline-block">
           <img

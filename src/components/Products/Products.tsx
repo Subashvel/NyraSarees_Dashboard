@@ -169,14 +169,18 @@ export default function ProductComponents() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    validateField(name, value);
-  };
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+) => {
+  const { name, value } = e.target;
+  setForm({ ...form, [name]: value });
+  validateField(name, value);
+
+  // Re-validate Offer Price if MRP changes
+  if (name === "productMrpPrice" && form.productOfferPrice) {
+    validateField("productOfferPrice", form.productOfferPrice);
+  }
+};
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -308,54 +312,69 @@ export default function ProductComponents() {
   };
 
   const validateField = (name: string, value: string) => {
-    let error = "";
+  let error = "";
 
-    switch (name) {
-      case "categoryId":
-        if (!value) error = "Category is required";
-        break;
-      case "subCategoryId":
-        if (!value) error = "Subcategory is required";
-        break;
-      case "productName":
-        if (!value.trim()) error = "Product name is required";
-        break;
-      case "productDescription":
-        if (!value.trim()) error = "Product Description is required";
-        else if (value.length > 500)
-          error = "Product Description cannot exceed 500 characters";
-        break;
-      case "brandName":
-        if (!value.trim()) error = "Product Brand name is required";
-        else if (value.length > 50)
-          error = "Product Brand name cannot exceed 50 characters";
-        break;
-      case "material":
-        if (!value.trim()) error = "Product Material is required";
-        else if (value.length > 50)
-          error = "Product Material cannot exceed 50 characters";
-        break;
-      case "productMrpPrice":
-        if (!value.trim()) {
-          error = "Product MRP Price is required";
-        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-          error = "Product MRP Price must be a valid number";
+  switch (name) {
+    case "categoryId":
+      if (!value) error = "Category is required";
+      break;
+    case "subCategoryId":
+      if (!value) error = "Subcategory is required";
+      break;
+    case "productName":
+      if (!value.trim()) error = "Product name is required";
+      else if (value.trim().length < 3)
+        error = "Product Name should be at least 3 characters long";
+      break;
+    case "productDescription":
+      if (!value.trim()) error = "Product Description is required";
+      else if (value.trim().length < 3)
+        error = "Product Description should be at least 3 characters long";
+      else if (value.length > 500)
+        error = "Product Description cannot exceed 500 characters";
+      break;
+    case "brandName":
+      if (!value.trim()) error = "Product Brand name is required";
+      else if (value.trim().length < 3)
+        error = "Product Brand Name should be at least 3 characters long";
+      else if (value.length > 50)
+        error = "Product Brand name cannot exceed 50 characters";
+      break;
+    case "material":
+      if (!value.trim()) error = "Product Material is required";
+      else if (value.trim().length < 3)
+        error = "Product Material Name should be at least 3 characters long";
+      else if (value.length > 50)
+        error = "Product Material cannot exceed 50 characters";
+      break;
+    case "productMrpPrice":
+      if (!value.trim()) {
+        error = "Product MRP Price is required";
+      } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+        error = "Product MRP Price must be a valid number";
+      }
+      break;
+
+    case "productOfferPrice":
+      if (!value.trim()) {
+        error = "Product Offer Price is required";
+      } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+        error = "Product Offer Price must be a valid number";
+      } else {
+        const mrp = parseFloat(form.productMrpPrice || "0");
+        const offer = parseFloat(value);
+        if (offer > mrp) {
+          error = "Product Offer Price should not be more than Product MRP Price";
         }
-        break;
+      }
+      break;
+    default:
+      break;
+  }
 
-      case "productOfferPrice":
-        if (!value.trim()) {
-          error = "Product Product Offer Price is required";
-        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-          error = "Product Offer Price must be a valid number";
-        }
-        break;
-      default:
-        break;
-    }
+  setErrors((prev) => ({ ...prev, [name]: error }));
+};
 
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  };
 
   const filteredProducts = form.categoryId
     ? products.filter((p) => String(p.categoryId) === String(form.categoryId))

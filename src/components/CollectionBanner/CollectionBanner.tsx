@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
 import {
-  getHomeBanners,
-  createHomeBanner,
-  updateHomeBanner,
-  deleteHomeBanner,
+  getCollectionBanners,
+  createCollectionBanner,
+  updateCollectionBanner,
+  deleteCollectionBanner,
 } from "./CollectionBannerApi";
 
 const imageBaseUrl = `http://localhost:5000/uploads/`;
@@ -24,7 +24,7 @@ export default function CollectionbannerComponents() {
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const data = await getHomeBanners();
+      const data = await getCollectionBanners();
       if (Array.isArray(data)) setBanners(data);
     } catch {
       toast.error("Failed to fetch banners");
@@ -47,7 +47,7 @@ export default function CollectionbannerComponents() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     if (!imageFile && !editBanner) {
       toast.error("Please select an image");
       return;
@@ -62,10 +62,10 @@ export default function CollectionbannerComponents() {
 
     try {
       if (editBanner) {
-        await updateHomeBanner(editBanner.id, formData);
+        await updateCollectionBanner(editBanner.id, formData);
         toast.success("Banner updated successfully");
       } else {
-        await createHomeBanner(formData);
+        await createCollectionBanner(formData);
         toast.success("Banner created successfully");
       }
       handleCloseModal();
@@ -85,7 +85,7 @@ export default function CollectionbannerComponents() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await deleteHomeBanner(id);
+          await deleteCollectionBanner(id);
           toast.success("Banner deleted");
           fetchBanners();
         } catch {
@@ -110,14 +110,11 @@ export default function CollectionbannerComponents() {
       };
     });
   };
-  
 
   return (
-    <div
-      className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6"
-    >
+    <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Home Banners</h2>
+        <h2 className="text-xl font-semibold">Collection Banners</h2>
         <button
           onClick={() => handleOpenModal()}
           className="bg-green-500 text-white px-3 py-1 rounded"
@@ -133,7 +130,7 @@ export default function CollectionbannerComponents() {
           <thead className="bg-gray-100 border-b border-gray-200">
             <tr className="bg-gray-100">
               <th className="px-4 py-2">ID</th>
-              <th className="px-4 py-2">Banner Image</th>
+              <th className="px-4 py-2">Collection Banner Image</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -191,26 +188,31 @@ export default function CollectionbannerComponents() {
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block mb-1 font-medium">Banner Image</label>
+                <label className="block mb-1 font-medium">
+                  Collection Banner Image
+                </label>
                 <input
-  type="file"
-  accept="image/*"
-  onChange={async (e) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    if (file) {
-      const isValid = await validateImage(file);
-      if (isValid) {
-        setImageFile(file);
-      } else {
-        setImageFile(null);
-      }
-    } else {
-      setImageFile(null);
-      setImageError(null);
-    }
-  }}
-/>
-{imageError && <p className="text-red-500 text-sm mt-1">{imageError}</p>}
+                  type="file"
+                  className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files ? e.target.files[0] : null;
+                    if (file) {
+                      const isValid = await validateImage(file);
+                      if (isValid) {
+                        setImageFile(file);
+                      } else {
+                        setImageFile(null);
+                      }
+                    } else {
+                      setImageFile(null);
+                      setImageError(null);
+                    }
+                  }}
+                />
+                {imageError && (
+                  <p className="text-red-500 text-sm mt-1">{imageError}</p>
+                )}
                 {(imageFile || editBanner?.bannerImage) && (
                   <img
                     src={
