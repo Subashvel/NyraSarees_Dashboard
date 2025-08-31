@@ -11,6 +11,9 @@ import {
 } from "../ProductVariant/productVariantChildApi";
 
 interface VariantForm {
+  isNewArrival: boolean;
+  isBestSeller: boolean;
+  isTrending: boolean;
   productColor: string;
   stockQuantity: string;
   lowStock: string;
@@ -40,6 +43,9 @@ export default function VariantBlock({
     stockQuantity: "",
     lowStock: "",
     productVariantImage: null,
+    isNewArrival: false,
+    isBestSeller: false,
+    isTrending: false,
   });
 
   const [childImages, setChildImages] = useState<File[]>([]);
@@ -55,25 +61,46 @@ export default function VariantBlock({
     lowStock: "",
   });
   const [childImageErrors, setChildImageErrors] = useState<string[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
+
+const handleVariantChange = (index: number, data: any) => {
+  setVariants((prev) => {
+    const updated = [...prev];
+    updated[index] = { ...updated[index], ...data }; // Merge changes, don't overwrite
+    return updated;
+  });
+};
+
 
   const handleRemoveImage = () => {
     setForm({ ...form, productVariantImage: null });
     setPreview(null);
   };
 
+  const resetVariantForm = () => {
+  setForm({
+    productColor: "",
+    stockQuantity: "",
+    lowStock: "",
+    productVariantImage: null,
+    isNewArrival: false,
+    isBestSeller: false,
+    isTrending: false,
+  });
+  setPreview(null);
+};
+
+
   // 🔹 Load existing images if edit mode
   useEffect(() => {
-    if (onChange) {
-      onChange({
-        variantId,
-        productColor: form.productColor,
-        stockQuantity: form.stockQuantity,
-        lowStock: form.lowStock,
-        productVariantImage: form.productVariantImage,
-        childImages,
-      });
-    }
-  }, [form, childImages, variantId]);
+  if (onChange) {
+    onChange({
+      variantId,
+      ...form, // ✅ Spreads all form fields correctly, including checkbox states
+      childImages,
+    });
+  }
+}, [form, childImages, variantId]);
 
   // --- Add new child images ---
   const handleChildImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,7 +223,7 @@ export default function VariantBlock({
         <p className="text-red-500 text-xs">{errors.lowStock}</p>
       )}
       <div>
-      <label className="block mb-1 text-sm mt-3">Variant Image</label>
+      <label className="block mb-1 text-sm mt-3">Variant Image (726 × 967)</label>
 
       <input
         type="file"
@@ -227,6 +254,54 @@ export default function VariantBlock({
         <p className="text-red-500 text-xs mt-1">{variantImageError}</p>
       )}
 
+      <div className="mb-6">
+              <label className="block mb-2 text-sm font-medium">Tags</label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isNewArrival"
+                    checked={form.isNewArrival || false}
+                    onChange={(e) =>
+  setForm((prev) => ({ ...prev, isNewArrival: e.target.checked }))
+}
+
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>New Arrival</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isBestSeller"
+                    checked={form.isBestSeller || false}
+                    onChange={(e) =>
+  setForm((prev) => ({ ...prev, isBestSeller: e.target.checked }))
+}
+
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>Best Seller</span>
+                </label>
+
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isTrending"
+                    checked={form.isTrending || false}
+                    onChange={(e) =>
+  setForm((prev) => ({ ...prev, isTrending: e.target.checked }))
+}
+
+
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>Trending</span>
+                </label>
+              </div>
+            </div>
+
       </div>
       {preview && (
         <div className="mt-2 relative inline-block">
@@ -244,7 +319,7 @@ export default function VariantBlock({
         </div>
       )}
 
-      <label className="block mb-1 text-sm mt-3">Thumb Images</label>
+      <label className="block mb-1 text-sm mt-3">Thumb Images (726 × 967)</label>
       <button
         type="button"
         onClick={() =>

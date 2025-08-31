@@ -100,11 +100,11 @@ export default function CollectionbannerComponents() {
       const img = new Image();
       img.src = URL.createObjectURL(file);
       img.onload = () => {
-        if (img.width === 726 && img.height === 967) {
+        if (img.width === 1905 && img.height === 674) {
           setImageError(null);
           resolve(true);
         } else {
-          setImageError("Image must be exactly 726 × 967 pixels.");
+          setImageError("Image must be exactly 1905 × 674 pixels.");
           resolve(false);
         }
       };
@@ -189,7 +189,7 @@ export default function CollectionbannerComponents() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block mb-1 font-medium">
-                  Collection Banner Image
+                  Collection Banner Image (1905 × 674)
                 </label>
                 <input
                   type="file"

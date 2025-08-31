@@ -76,10 +76,10 @@ export default function ProductVariants() {
     { id: number; url: string }[]
   >([]);
   const [form, setForm] = useState<any>({
-  isNewArrival: false,
-  isBestSeller: false,
-  isTrending: false,
-});
+    isNewArrival: false,
+    isBestSeller: false,
+    isTrending: false,
+  });
   const [childImageErrors, setChildImageErrors] = useState<string[]>([]);
   const [errors, setErrors] = useState({
     categoryId: "",
@@ -274,9 +274,9 @@ export default function ProductVariants() {
       toast.error("Maximum 10 images allowed");
       return;
     }
-    setChildImages([...childImages, new File([], "")]); 
+    setChildImages([...childImages, new File([], "")]);
     setChildPreview([...childPreview, ""]);
-    setChildImageErrors([...childImageErrors, ""]); 
+    setChildImageErrors([...childImageErrors, ""]);
   };
 
   const removeChildImage = (index: number) => {
@@ -309,25 +309,25 @@ export default function ProductVariants() {
         ? ""
         : errors.productVariantImage,
     };
-  
+
     setErrors(validationErrors);
-  
+
     // stop if any errors exist
     if (Object.values(validationErrors).some((err) => err)) return;
-  
+
     try {
       const formData = new FormData();
       formData.append("productId", form.productId.toString());
       formData.append("productColor", form.productColor);
       formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
       formData.append("lowStock", form.lowStock?.toString() || "0");
-  
+
       if (form.productVariantImage instanceof File) {
         formData.append("productVariantImage", form.productVariantImage);
       }
       formData.append("isNewArrival", String(form.isNewArrival));
-formData.append("isBestSeller", String(form.isBestSeller));
-formData.append("isTrending", String(form.isTrending));
+      formData.append("isBestSeller", String(form.isBestSeller));
+      formData.append("isTrending", String(form.isTrending));
       let savedVariant;
       if (editingId) {
         savedVariant = await updateProductVariant(editingId, formData);
@@ -336,7 +336,7 @@ formData.append("isTrending", String(form.isTrending));
         savedVariant = await createProductVariant(formData);
         toast.success("Variant created successfully!");
       }
-  
+
       if (childImages.length > 0 && savedVariant?.data?.productVariantId) {
         await uploadChildImages(
           savedVariant.data.productVariantId,
@@ -345,8 +345,6 @@ formData.append("isTrending", String(form.isTrending));
         toast.success("Child images uploaded!");
       }
 
-      
-  
       resetForm();
       fetchVariants();
     } catch (err) {
@@ -354,7 +352,6 @@ formData.append("isTrending", String(form.isTrending));
       toast.error("Failed to save variant");
     }
   };
-  
 
   // --- Delete ---
   const handleDelete = (id: number) => {
@@ -388,8 +385,8 @@ formData.append("isTrending", String(form.isTrending));
       lowStock: variant.lowStock,
       productVariantImage: null,
       isNewArrival: variant.isNewArrival || false,
-  isBestSeller: variant.isBestSeller || false,
-  isTrending: variant.isTrending || false,
+      isBestSeller: variant.isBestSeller || false,
+      isTrending: variant.isTrending || false,
     });
 
     setPreview(variant.productVariantImage || null);
@@ -727,20 +724,19 @@ formData.append("isTrending", String(form.isTrending));
                   onChange={(e) => {
                     const value = e.target.value;
                     setForm({ ...form, stockQuantity: value });
-                  
+
                     let error = "";
                     if (!value) {
                       error = "Stock quantity is required";
                     } else if (!/^\d+(\.\d+)?$/.test(value)) {
                       error = "Stock quantity must be a number";
                     }
-                  
+
                     setErrors((prev) => ({
                       ...prev,
                       stockQuantity: error,
                     }));
                   }}
-                  
                   className={`w-full border rounded px-3 py-2 mb-1 ${
                     errors.stockQuantity ? "border-red-500" : "border-gray-300"
                   }`}
@@ -761,20 +757,19 @@ formData.append("isTrending", String(form.isTrending));
                   onChange={(e) => {
                     const value = e.target.value;
                     setForm({ ...form, lowStock: value });
-                  
+
                     let error = "";
                     if (!value) {
                       error = "Low stock is required";
                     } else if (!/^\d+$/.test(value)) {
                       error = "Low stock must be a number";
                     }
-                  
+
                     setErrors((prev) => ({
                       ...prev,
                       lowStock: error,
                     }));
                   }}
-                  
                   className={`w-full border rounded px-3 py-2 mb-1 ${
                     errors.lowStock ? "border-red-500" : "border-gray-300"
                   }`}
@@ -845,53 +840,52 @@ formData.append("isTrending", String(form.isTrending));
             </div>
 
             <div className="mb-6">
-  <label className="block mb-2 text-sm font-medium">Tags</label>
-  <div className="flex items-center gap-4">
-    <label className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        name="isNewArrival"
-        checked={form.isNewArrival || false}
-        onChange={(e) =>
-          setForm({ ...form, isNewArrival: e.target.checked })
-        }
-        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-      />
-      <span>New Arrival</span>
-    </label>
+              <label className="block mb-2 text-sm font-medium">Tags</label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isNewArrival"
+                    checked={form.isNewArrival || false}
+                    onChange={(e) =>
+                      setForm({ ...form, isNewArrival: e.target.checked })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>New Arrival</span>
+                </label>
 
-    <label className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        name="isBestSeller"
-        checked={form.isBestSeller || false}
-        onChange={(e) =>
-          setForm({ ...form, isBestSeller: e.target.checked })
-        }
-        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-      />
-      <span>Best Seller</span>
-    </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isBestSeller"
+                    checked={form.isBestSeller || false}
+                    onChange={(e) =>
+                      setForm({ ...form, isBestSeller: e.target.checked })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>Best Seller</span>
+                </label>
 
-    <label className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        name="isTrending"
-        checked={form.isTrending || false}
-        onChange={(e) =>
-          setForm({ ...form, isTrending: e.target.checked })
-        }
-        className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-      />
-      <span>Trending</span>
-    </label>
-  </div>
-</div>
-
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="isTrending"
+                    checked={form.isTrending || false}
+                    onChange={(e) =>
+                      setForm({ ...form, isTrending: e.target.checked })
+                    }
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span>Trending</span>
+                </label>
+              </div>
+            </div>
 
             {/* Child Images */}
             <label className="block mt-4 text-sm font-semibold">
-              Thumb Images
+              Thumb Images (726 × 967)
             </label>
             {childImages.map((_, index) => (
               <div key={index} className="flex flex-col gap-1 mb-2">

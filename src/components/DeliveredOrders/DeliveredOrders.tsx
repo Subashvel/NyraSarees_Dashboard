@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 // import { getOrders } from "./orderApi";
 
 interface OrderItem {
@@ -12,7 +12,7 @@ interface OrderItem {
 
 
 export default function DeliveredOrders() {
-  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [orders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

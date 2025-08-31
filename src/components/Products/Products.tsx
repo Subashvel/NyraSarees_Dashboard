@@ -29,6 +29,7 @@ interface ProductItem {
 interface SubCategoryItem {
   subCategoryId: number;
   subCategoryName: string;
+  categoryId: number;
 }
 
 interface CategoryItem {
@@ -49,7 +50,8 @@ export default function ProductComponents() {
   );
   const [productImage, setProductImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [variantBlocks, setVariantBlocks] = useState<number[]>([]);
+  const [variantBlocks, setVariantBlocks] = useState<number[]>([Date.now()]);
+
   const [variants, setVariants] = useState<any[]>([]);
 
   const [form, setForm] = useState({
@@ -146,7 +148,7 @@ export default function ProductComponents() {
     setProductImage(null);
     setImagePreview(null);
     setEditingProduct(null);
-    setVariantBlocks([]);
+    setVariantBlocks([Date.now()]);
   };
 
   const openAddModal = () => {
@@ -248,20 +250,22 @@ export default function ProductComponents() {
 
       // 🔹 Save Variants
       for (const variant of variants) {
-        const variantData = new FormData();
-        variantData.append("productId", productId);
-        variantData.append("productColor", variant.productColor);
-        variantData.append("stockQuantity", variant.stockQuantity || "0");
-        variantData.append("lowStock", variant.lowStock || "0");
+  const variantData = new FormData();
+  variantData.append("productId", productId);
+  variantData.append("productColor", variant.productColor);
+  variantData.append("stockQuantity", variant.stockQuantity || "0");
+  variantData.append("lowStock", variant.lowStock || "0");
 
-        if (variant.productVariantImage) {
-          variantData.append(
-            "productVariantImage",
-            variant.productVariantImage
-          );
-        }
+  if (variant.productVariantImage) {
+    variantData.append("productVariantImage", variant.productVariantImage);
+  }
 
-        const savedVariant = await createProductVariant(variantData);
+  // FIX: Append checkbox values
+  variantData.append("isNewArrival", String(variant.isNewArrival));
+  variantData.append("isBestSeller", String(variant.isBestSeller));
+  variantData.append("isTrending", String(variant.isTrending));
+
+  const savedVariant = await createProductVariant(variantData);
 
         // 🔹 Upload only valid child images
         if (variant.childImages?.length) {
@@ -379,6 +383,10 @@ export default function ProductComponents() {
   const filteredProducts = form.categoryId
     ? products.filter((p) => String(p.categoryId) === String(form.categoryId))
     : products;
+
+    const filteredSubCategories = subCategories.filter(
+    (sc) => sc.categoryId === Number(form.categoryId || 0)
+  );
 
   return (
     <div className="p-5 border border-gray-200 rounded-2xl lg:p-6">
@@ -500,22 +508,35 @@ export default function ProductComponents() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
               {/* Category */}
               <div>
+                {/* Dropdowns */}
                 <label className="block mb-1 text-sm">Category Name</label>
                 <select
-                  name="categoryId"
-                  value={form.categoryId}
-                  onChange={handleChange}
-                  className={`w-full border rounded px-2 py-2 mb-1 ${
+                  value={form.categoryId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({
+                      ...form,
+                      categoryId: value,
+                      subCategoryId: "",
+                      // productId: "",
+                    });
+                    setErrors((prev) => ({
+                      ...prev,
+                      categoryId: value ? "" : "Category name is required",
+                    }));
+                  }}
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
                     errors.categoryId ? "border-red-500" : "border-gray-300"
                   }`}
                 >
-                  <option value="">-- Select Category --</option>
+                  <option value="">Select Category</option>
                   {categories.map((c) => (
                     <option key={c.categoryId} value={c.categoryId}>
                       {c.categoryName}
                     </option>
                   ))}
                 </select>
+
                 {errors.categoryId && (
                   <p className="text-red-500 text-xs">{errors.categoryId}</p>
                 )}
@@ -525,20 +546,29 @@ export default function ProductComponents() {
               <div>
                 <label className="block mb-1 text-sm">Sub Category Name</label>
                 <select
-                  name="subCategoryId"
-                  value={form.subCategoryId}
-                  onChange={handleChange}
-                  className={`w-full border rounded px-2 py-2 mb-1 ${
+                  value={form.subCategoryId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, subCategoryId: value,  });
+                    setErrors((prev) => ({
+                      ...prev,
+                      subCategoryId: value
+                        ? ""
+                        : "Subcategory name is required",
+                    }));
+                  }}
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
                     errors.subCategoryId ? "border-red-500" : "border-gray-300"
                   }`}
                 >
-                  <option value="">-- Select Subcategory --</option>
-                  {subCategories.map((s) => (
-                    <option key={s.subCategoryId} value={s.subCategoryId}>
-                      {s.subCategoryName}
+                  <option value="">Select SubCategory</option>
+                  {filteredSubCategories.map((sc) => (
+                    <option key={sc.subCategoryId} value={sc.subCategoryId}>
+                      {sc.subCategoryName}
                     </option>
                   ))}
                 </select>
+
                 {errors.subCategoryId && (
                   <p className="text-red-500 text-xs">{errors.subCategoryId}</p>
                 )}

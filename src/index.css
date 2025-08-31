@@ -779,7 +779,7 @@ span.flatpickr-weekday,
 
 .ccc{
   overflow-y: scroll;
-  font-size: xx-small;
+  /* font-size: xx-small; */
   display: block;
   justify-items: anchor-center;
   /* position: static */
