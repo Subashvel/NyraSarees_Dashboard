@@ -129,16 +129,18 @@ export default function CollectionbannerComponents() {
         <table className="min-w-full text-sm text-left">
           <thead className="bg-gray-100 border-b border-gray-200">
             <tr className="bg-gray-100">
-              <th className="px-4 py-2">ID</th>
+              <th className="px-4 py-2">S.No</th>
+              {/* <th className="px-4 py-2">ID</th> */}
               <th className="px-4 py-2">Collection Banner Image</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {banners.length > 0 ? (
-              banners.map((banner) => (
+              banners.map((banner, index) => (
                 <tr key={banner.id}>
-                  <td className="px-4 py-2">{banner.id}</td>
+                  <td className="px-4 py-2">{index + 1}</td>
+                  {/* <td className="px-4 py-2">{banner.id}</td> */}
                   <td className="px-4 py-2">
                     <img
                       src={

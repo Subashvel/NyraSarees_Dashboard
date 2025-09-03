@@ -17,6 +17,11 @@ export const getStock = async (productVariantId: number) => {
   return res.data;
 };
 
+export const getAllStocks = async (productVariantId: number) => {
+  const res = await axios.get(`${API_URL}/${productVariantId}`);
+  return res.data;
+};
+
 export const addStock = async (productVariantId: number, quantity: number) => {
   const res = await axios.post(`${API_URL}/add`, { productVariantId, quantity });
   return res.data;

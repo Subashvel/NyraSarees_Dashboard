@@ -124,11 +124,11 @@ const othersItems: NavItem[] = [
   //     { name: "Sign Up", path: "/signup", pro: false },
   //   ],
   // },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Orders",
-    path: "/view-orders",
-  },
+  // {
+  //   icon: <BoxCubeIcon />,
+  //   name: "New Orders",
+  //   path: "/view-orders",
+  // },
   {
     icon: <BoxCubeIcon />,
     name: "Package Orders",
@@ -171,6 +171,12 @@ const customerItems: NavItem[] = [
     name: "Customers",
     path: "/customers",
   },
+  {
+    icon: <ProdIcon />,
+    name: "Contact Details",
+    path: "/contactdetails",
+  },
+
 ];
 
 const productItems: NavItem[] = [

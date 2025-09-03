@@ -42,6 +42,9 @@ import DispatchedOrders from "./pages/DispatchedOrders";
 import OutOfDeliveryOrders from "./pages/OutOfDeliveryOrders";
 import DeliveredOrders from "./pages/DeliveredOrders";
 import CollectionbannerComponents from "./pages/CollectionBanner";
+import ContactTable from "./pages/Contact";
+import InvoicePage from "./components/orders/InvoicePage";
+import ProductDetailsPage from "./components/orders/ProductDetails";
 
 // import Coupons from "./components/coupon/coupon";
 
@@ -102,15 +105,19 @@ export default function App() {
             <Route path="/productdelivery" element={<OutOfDeliveryOrders />} />
             <Route path="/productcomplete" element={<DeliveredOrders />} />
             <Route path="/collectionbanner" element={<CollectionbannerComponents />} />
-
+            <Route path="/contactdetails" element={<ContactTable />} />
+           
+            <Route path="/product/:variantId" element={<ProductDetailsPage productId={0} />} />
+            
           </Route>
-
+           
           {/* Auth Layout */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/ForgotPassword" element={<ForgotPassword />} />
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/invoice/:id" element={<InvoicePage />} />
 
           {/* Products */}
 

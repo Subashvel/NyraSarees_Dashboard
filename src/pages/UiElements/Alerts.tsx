@@ -7,6 +7,8 @@ import {
   getCoupons,
   updateCoupon,
 } from "../../components/coupon/couponApi";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface CouponItem {
   id: number;
@@ -36,8 +38,8 @@ const Coupons = () => {
     minimumPurchaseAmount: 0,
     discountUnit: "percentage",
     discountValue: 0,
-    startDate: "",
-    endDate: "",
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   });
 
   // Fetch Coupons
@@ -101,16 +103,42 @@ const Coupons = () => {
         errorMsg = "Date Field is required";
       }
     }
+
+    if (name === "minimumPurchaseAmount" || name === "discountValue") {
+      if (!value) {
+        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} Field is required`;
+      } else if (!/^\d+$/.test(value)) {
+        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} must be a number`;
+      } else if (value.length > 10) {
+        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} cannot exceed 10 digits`;
+      }
+    }
+    
   
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
   
 
+  const handleDateChange = (name: "startDate" | "endDate", date: Date | null) => {
+    setFormData((prev) => ({ ...prev, [name]: date }));
+  
+    let errorMsg = "";
+    if (!date) {
+      errorMsg = "Date field is required";
+    } else if (name === "endDate" && formData.startDate && date < formData.startDate) {
+      errorMsg = "End Date must be after Start Date";
+    } else if (name === "startDate" && formData.endDate && date > formData.endDate) {
+      errorMsg = "Start Date must be before End Date";
+    }
+  
+    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+  };
+
   // Open modal for Add/Edit
   const openModal = (coupon?: CouponItem) => {
     if (coupon) {
       setEditingCoupon(coupon);
-      setFormData({ ...coupon });
+      setFormData({ ...coupon, startDate: new Date(coupon.startDate), endDate: new Date(coupon.endDate) });
     } else {
       setEditingCoupon(null);
       setFormData({
@@ -118,8 +146,8 @@ const Coupons = () => {
         minimumPurchaseAmount: 0,
         discountUnit: "percentage",
         discountValue: 0,
-        startDate: "",
-        endDate: "",
+        startDate: null as Date | null,
+        endDate: null as Date | null,
       });
     }
     setShowModal(true);
@@ -177,6 +205,42 @@ const Coupons = () => {
       newErrors.endDate = "Date Field is required";
       isValid = false;
     }
+
+    if (!formData.startDate) {
+      newErrors.startDate = "Start Date is required";
+      isValid = false;
+    }
+    if (!formData.endDate) {
+      newErrors.endDate = "End Date is required";
+      isValid = false;
+    }
+    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
+      newErrors.startDate = "Start Date must be before End Date";
+      newErrors.endDate = "End Date must be after Start Date";
+      isValid = false;
+    }
+    if (!formData.minimumPurchaseAmount) {
+      newErrors.minimumPurchaseAmount = "Minimum amount of purchase is required";
+      isValid = false;
+    } else if (isNaN(Number(formData.minimumPurchaseAmount))) {
+      newErrors.minimumPurchaseAmount = "Minimum amount of purchase must be a number";
+      isValid = false;
+    } else if (formData.minimumPurchaseAmount.toString().length > 10) {
+      newErrors.minimumPurchaseAmount = "Minimum amount of purchase cannot exceed 10 digits";
+      isValid = false;
+    }
+    
+    if (!formData.discountValue) {
+      newErrors.discountValue = "Discount Value is required";
+      isValid = false;
+    } else if (isNaN(Number(formData.discountValue))) {
+      newErrors.discountValue = "Discount Value must be a number";
+      isValid = false;
+    } else if (formData.discountValue.toString().length > 10) {
+      newErrors.discountValue = "Discount Value cannot exceed 10 digits";
+      isValid = false;
+    }
+
   
     setErrors(newErrors);
     if (!isValid) return;
@@ -218,6 +282,7 @@ const Coupons = () => {
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
+      <div className="space-y-6">
     <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold">Coupons</h2>
@@ -232,9 +297,11 @@ const Coupons = () => {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <table className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+        <table className="min-w-full text-sm text-left">
           <thead>
             <tr className="bg-gray-200">
+              <th className="px-4 py-2">S.No</th>
               <th className="px-4 py-2">Code</th>
               <th className="px-4 py-2">Min. Purchase</th>
               <th className="px-4 py-2">Discount</th>
@@ -244,8 +311,9 @@ const Coupons = () => {
             </tr>
           </thead>
           <tbody>
-            {coupons.map((coupon) => (
+            {coupons.map((coupon, index) => (
               <tr key={coupon.id} className="border">
+                <td className="px-4 py-2">{index + 1}</td>
                 <td className="px-4 py-2">{coupon.couponCodeName}</td>
                 <td className="px-4 py-2">{coupon.minimumPurchaseAmount}</td>
                 <td className="px-4 py-2">
@@ -273,6 +341,7 @@ const Coupons = () => {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {/* Modal */}
@@ -302,6 +371,7 @@ const Coupons = () => {
             <input
               type="text"
               name="minimumPurchaseAmount"
+              // maxLength={10}
               placeholder="Minimum Purchase"
               value={formData.minimumPurchaseAmount}
               onChange={handleChange}
@@ -344,31 +414,22 @@ const Coupons = () => {
               <p className="text-red-500 text-sm">{errors.discountValue}</p>
             )}
             <label className="block mb-1 text-sm">Start Date</label>
-            <input
-              type="date"
-              name="startDate"
-              value={formData.startDate}
-              onChange={handleChange}
-              className={`border p-2 w-full mb-1 ${
-                errors.startDate ? "border-red-500" : ""
-              }`}
-            />
-            {errors.startDate && (
-              <p className="text-red-500 text-sm">{errors.startDate}</p>
-            )}
+            <DatePicker
+  selected={formData.startDate}
+  onChange={(date) => handleDateChange("startDate", date)}
+  className={`border p-2 w-full mb-1 ${errors.startDate ? "border-red-500" : ""}`}
+  dateFormat="yyyy-MM-dd"
+/>
+{errors.startDate && <p className="text-red-500 text-sm">{errors.startDate}</p>}
+
             <label className="block mb-1 text-sm">End Date</label>
-            <input
-              type="date"
-              name="endDate"
-              value={formData.endDate}
-              onChange={handleChange}
-              className={`border p-2 w-full mb-1 ${
-                errors.endDate ? "border-red-500" : ""
-              }`}
+            <DatePicker
+              selected={formData.endDate}
+              onChange={(date) => handleDateChange("endDate", date)}
+              className={`border p-2 w-full mb-1 ${errors.endDate ? "border-red-500" : ""}`}
+              dateFormat="yyyy-MM-dd"
             />
-            {errors.endDate && (
-              <p className="text-red-500 text-sm">{errors.endDate}</p>
-            )}
+            {errors.endDate && <p className="text-red-500 text-sm">{errors.endDate}</p>}
 
             <div className="flex justify-end gap-2">
               <button
@@ -387,6 +448,7 @@ const Coupons = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
     </div>
   );
