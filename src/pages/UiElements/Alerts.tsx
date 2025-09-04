@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
@@ -59,80 +60,70 @@ const Coupons = () => {
   }, []);
 
   // Handle form change
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  
-    let errorMsg = "";
-  
-    // Inline validation
-    if (name === "couponCodeName") {
-      if (!value) {
-        errorMsg = "Coupon Code Field is required";
-      } else if (value.length < 4) {
-        errorMsg = "Coupon Code should be at minimum 4 characters";
-      }
-    }
-  
-    if (name === "minimumPurchaseAmount") {
-      if (!value) {
-        errorMsg = "Minimum amount of purchase is required";
-      } else if (!/^\d+$/.test(value)) {
-        errorMsg = "Minimum amount of purchase must be a number";
-      }
-    }
-  
-    if (name === "discountUnit") {
-      if (!value) {
-        errorMsg = "Discount Field is required";
-      }
-    }
-  
-    if (name === "discountValue") {
-      if (!value) {
-        errorMsg = "Discount Value Field is required";
-      } else if (!/^\d+$/.test(value)) {
-        errorMsg = "Discount Value must be a number";
-      }
-    }
-  
-    if (name === "startDate" || name === "endDate") {
-      if (!value) {
-        errorMsg = "Date Field is required";
-      }
-    }
+  // Handle form change
+const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+  const { name, value } = e.target;
+  setFormData({ ...formData, [name]: value });
 
-    if (name === "minimumPurchaseAmount" || name === "discountValue") {
-      if (!value) {
-        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} Field is required`;
-      } else if (!/^\d+$/.test(value)) {
-        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} must be a number`;
-      } else if (value.length > 10) {
-        errorMsg = `${name === "minimumPurchaseAmount" ? "Minimum Purchase" : "Discount"} cannot exceed 10 digits`;
+  let errorMsg = "";
+
+  if (name === "couponCodeName") {
+    if (!value) {
+      errorMsg = "Coupon Code Field is required";
+    } else if (value.length < 4) {
+      errorMsg = "Coupon Code should be at minimum 4 characters";
+    }
+  }
+
+  if (name === "minimumPurchaseAmount") {
+    if (!value) {
+      errorMsg = "Minimum amount of purchase is required";
+    } else if (!/^\d+$/.test(value)) {
+      errorMsg = "Minimum amount of purchase must be a number";
+    } else if (value.length > 10) {
+      errorMsg = "Minimum Purchase cannot exceed 10 digits";
+    }
+  }
+
+  if (name === "discountValue") {
+    if (!value) {
+      errorMsg = "Discount Value is required";
+    } else if (!/^\d+$/.test(value)) {
+      errorMsg = "Discount Value must be a number";
+    } else if (formData.discountUnit === "percentage") {
+      if (Number(value) < 1 || Number(value) > 100) {
+        errorMsg = "Percentage must be between 1 and 100";
+      }
+    } else if (formData.discountUnit === "flat") {
+      if (Number(value) > Number(formData.minimumPurchaseAmount)) {
+        errorMsg = "Flat discount cannot exceed Minimum Purchase Amount";
       }
     }
-    
-  
-    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
-  };
-  
+  }
 
-  const handleDateChange = (name: "startDate" | "endDate", date: Date | null) => {
-    setFormData((prev) => ({ ...prev, [name]: date }));
-  
-    let errorMsg = "";
-    if (!date) {
-      errorMsg = "Date field is required";
-    } else if (name === "endDate" && formData.startDate && date < formData.startDate) {
-      errorMsg = "End Date must be after Start Date";
-    } else if (name === "startDate" && formData.endDate && date > formData.endDate) {
-      errorMsg = "Start Date must be before End Date";
-    }
-  
-    setErrors((prev) => ({ ...prev, [name]: errorMsg }));
-  };
+  setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+};
+
+const handleDateChange = (name: "startDate" | "endDate", date: Date | null) => {
+  setFormData((prev) => ({ ...prev, [name]: date }));
+
+  let errorMsg = "";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (!date) {
+    errorMsg = "Date field is required";
+  } else if (name === "startDate" && date < today) {
+    errorMsg = "Start Date cannot be before today";
+  } else if (name === "endDate" && formData.startDate && date < formData.startDate) {
+    errorMsg = "End Date must be after Start Date";
+  }
+
+  setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+};
+
 
   // Open modal for Add/Edit
   const openModal = (coupon?: CouponItem) => {
@@ -154,109 +145,99 @@ const Coupons = () => {
   };
 
   // Save (Create / Update)
-  const handleSave = async () => {
-    let newErrors = {
-      couponCodeName: "",
-      minimumPurchaseAmount: "",
-      discountUnit: "",
-      discountValue: "",
-      startDate: "",
-      endDate: "",
-    };
-    let isValid = true;
-  
-    if (!formData.couponCodeName) {
-      newErrors.couponCodeName = "Coupon Code Field is required";
-      isValid = false;
-    } else if (formData.couponCodeName.length < 4) {
-      newErrors.couponCodeName = "Coupon Code should be at minimum 4 characters";
-      isValid = false;
-    }
-  
-    if (!formData.minimumPurchaseAmount) {
-      newErrors.minimumPurchaseAmount =
-        "Minimum amount of purchase must be a number";
-      isValid = false;
-    } else if (isNaN(Number(formData.minimumPurchaseAmount))) {
-      newErrors.minimumPurchaseAmount =
-        "Minimum amount of purchase must be a number";
-      isValid = false;
-    }
-  
-    if (!formData.discountUnit) {
-      newErrors.discountUnit = "Discount Field is required";
-      isValid = false;
-    }
-  
-    if (!formData.discountValue) {
-      newErrors.discountValue = "Discount Value must be a number";
-      isValid = false;
-    } else if (isNaN(Number(formData.discountValue))) {
-      newErrors.discountValue = "Discount Value must be a number";
-      isValid = false;
-    }
-  
-    if (!formData.startDate) {
-      newErrors.startDate = "Date Field is required";
-      isValid = false;
-    }
-  
-    if (!formData.endDate) {
-      newErrors.endDate = "Date Field is required";
-      isValid = false;
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = "Start Date is required";
-      isValid = false;
-    }
-    if (!formData.endDate) {
-      newErrors.endDate = "End Date is required";
-      isValid = false;
-    }
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
-      newErrors.startDate = "Start Date must be before End Date";
-      newErrors.endDate = "End Date must be after Start Date";
-      isValid = false;
-    }
-    if (!formData.minimumPurchaseAmount) {
-      newErrors.minimumPurchaseAmount = "Minimum amount of purchase is required";
-      isValid = false;
-    } else if (isNaN(Number(formData.minimumPurchaseAmount))) {
-      newErrors.minimumPurchaseAmount = "Minimum amount of purchase must be a number";
-      isValid = false;
-    } else if (formData.minimumPurchaseAmount.toString().length > 10) {
-      newErrors.minimumPurchaseAmount = "Minimum amount of purchase cannot exceed 10 digits";
-      isValid = false;
-    }
-    
-    if (!formData.discountValue) {
-      newErrors.discountValue = "Discount Value is required";
-      isValid = false;
-    } else if (isNaN(Number(formData.discountValue))) {
-      newErrors.discountValue = "Discount Value must be a number";
-      isValid = false;
-    } else if (formData.discountValue.toString().length > 10) {
-      newErrors.discountValue = "Discount Value cannot exceed 10 digits";
-      isValid = false;
-    }
-
-  
-    setErrors(newErrors);
-    if (!isValid) return;
-  
-    try {
-      if (editingCoupon) {
-        await updateCoupon(editingCoupon.id, formData);
-      } else {
-        await createCoupon(formData);
-      }
-      fetchCoupons();
-      setShowModal(false);
-    } catch {
-      toast.error("Failed to save coupon");
-    }
+  // Save (Create / Update)
+const handleSave = async () => {
+  let newErrors = {
+    couponCodeName: "",
+    minimumPurchaseAmount: "",
+    discountUnit: "",
+    discountValue: "",
+    startDate: "",
+    endDate: "",
   };
+  let isValid = true;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Coupon code
+  if (!formData.couponCodeName) {
+    newErrors.couponCodeName = "Coupon Code Field is required";
+    isValid = false;
+  } else if (formData.couponCodeName.length < 4) {
+    newErrors.couponCodeName = "Coupon Code should be at minimum 4 characters";
+    isValid = false;
+  }
+
+  // Min purchase
+  if (!formData.minimumPurchaseAmount) {
+    newErrors.minimumPurchaseAmount = "Minimum amount of purchase is required";
+    isValid = false;
+  } else if (isNaN(Number(formData.minimumPurchaseAmount))) {
+    newErrors.minimumPurchaseAmount = "Minimum amount of purchase must be a number";
+    isValid = false;
+  } else if (formData.minimumPurchaseAmount.toString().length > 10) {
+    newErrors.minimumPurchaseAmount = "Minimum amount of purchase cannot exceed 10 digits";
+    isValid = false;
+  }
+
+  // Discount unit
+  if (!formData.discountUnit) {
+    newErrors.discountUnit = "Discount Field is required";
+    isValid = false;
+  }
+
+  // Discount value
+  if (!formData.discountValue) {
+    newErrors.discountValue = "Discount Value is required";
+    isValid = false;
+  } else if (isNaN(Number(formData.discountValue))) {
+    newErrors.discountValue = "Discount Value must be a number";
+    isValid = false;
+  } else if (formData.discountUnit === "percentage") {
+    if (Number(formData.discountValue) < 1 || Number(formData.discountValue) > 100) {
+      newErrors.discountValue = "Percentage must be between 1 and 100";
+      isValid = false;
+    }
+  } else if (formData.discountUnit === "flat") {
+    if (Number(formData.discountValue) > Number(formData.minimumPurchaseAmount)) {
+      newErrors.discountValue = "Flat discount cannot exceed Minimum Purchase Amount";
+      isValid = false;
+    }
+  }
+
+  // Dates
+  if (!formData.startDate) {
+    newErrors.startDate = "Start Date is required";
+    isValid = false;
+  } else if (formData.startDate < today) {
+    newErrors.startDate = "Start Date cannot be before today";
+    isValid = false;
+  }
+
+  if (!formData.endDate) {
+    newErrors.endDate = "End Date is required";
+    isValid = false;
+  } else if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+    newErrors.endDate = "End Date must be after Start Date";
+    isValid = false;
+  }
+
+  setErrors(newErrors);
+  if (!isValid) return;
+
+  try {
+    if (editingCoupon) {
+      await updateCoupon(editingCoupon.id, formData);
+    } else {
+      await createCoupon(formData);
+    }
+    fetchCoupons();
+    setShowModal(false);
+  } catch {
+    toast.error("Failed to save coupon");
+  }
+};
+
   
 
   // Delete

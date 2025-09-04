@@ -57,11 +57,8 @@ export default function Orders() {
     const json = await res.json();
 
     if (json.success) {
-      // ✅ Only keep pending orders
-      const filteredOrders = json.orders.filter(
-        (o: any) => o.deliveryStatus === "pending"
-      );
-      setOrders(filteredOrders);
+      // ✅ Show ALL orders
+      setOrders(json.orders);
     } else {
       setOrders([]);
     }

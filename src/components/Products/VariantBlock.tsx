@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { ChromePicker, ColorResult } from "react-color";
+import { getColorName, getColorHex, cssColorNames } from "../../utils/colorUtils";
 import toast from "react-hot-toast";
 // import {
 //   createProductVariant,
@@ -169,23 +171,57 @@ const handleVariantChange = (index: number, data: any) => {
         {variantId ? "Edit Variant" : "Product Varient"}
       </h4>
 
-      <input
-        type="text"
-        placeholder="Color"
-        value={form.productColor}
-        onChange={(e) => {
-          const value = e.target.value;
-          setForm({ ...form, productColor: value });
-          setErrors((prev) => ({
-            ...prev,
-            productColor: value.trim() ? "" : "Color is required",
-          }));
-        }}
-        className="w-full border rounded px-3 py-2 mb-2"
-      />
-      {errors.productColor && (
-        <p className="text-red-500 text-xs">{errors.productColor}</p>
-      )}
+      {/* Text input for color name */}
+<input
+  type="text"
+  list="color-list"
+  placeholder="Enter color (e.g. Red, SkyBlue)"
+  value={form.productColor}
+  onChange={(e) => {
+    const value = e.target.value;
+    setForm({ ...form, productColor: value });
+    setErrors((prev) => ({
+      ...prev,
+      productColor: value.trim() ? "" : "Color is required",
+    }));
+  }}
+  className={`w-full border rounded px-3 py-2 mb-2 ${
+    errors.productColor ? "border-red-500" : "border-gray-300"
+  }`}
+/>
+
+{/* Autocomplete list with 140 CSS colors */}
+<datalist id="color-list">
+  {cssColorNames.map((c) => (
+    <option key={c} value={c} />
+  ))}
+</datalist>
+
+{/* ChromePicker works in HEX but stores as name */}
+<ChromePicker
+  color={getColorHex(form.productColor) || "#000000"}
+  onChangeComplete={(color: ColorResult) => {
+    const hex = color.hex.toUpperCase();
+    const name = getColorName(hex);
+    setForm({ ...form, productColor: name });
+  }}
+  disableAlpha
+/>
+
+
+  {/* Preview Circle */}
+  {form.productColor && (
+  <div
+    className="w-8 h-8 mt-2 rounded-full border"
+    style={{ backgroundColor: getColorHex(form.productColor) }}
+    title={form.productColor}
+  ></div>
+)}
+
+
+  {errors.productColor && (
+    <p className="text-red-500 text-xs">{errors.productColor}</p>
+  )}
 
       <input
         type="number"

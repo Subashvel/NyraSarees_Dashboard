@@ -86,54 +86,48 @@ export default function ProductStock() {
   };
 
   const handleSubmit = async () => {
-    if (!quantity) {
-      setError("Stock Quantity is required");
-      return;
-    }
-    if (!/^\d+$/.test(quantity)) {
-      setError("Stock Quantity should only be number");
-      return;
-    }
-    if (modalType === "reduce" && selectedVariant) {
-      if (parseInt(quantity) > (selectedVariant.stock ?? 0)) {
-        setError("Stock Quantity Should not be more than Available stock");
-        return;
-      }
+  if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+    setError("Enter a valid quantity");
+    return;
+  }
+
+  try {
+    if (modalType === "add" && selectedVariant) {
+      await addStock(selectedVariant.productVariantId, Number(quantity));
+      toast.success("Stock added successfully!");
+    } else if (modalType === "reduce" && selectedVariant) {
+      await reduceStock(selectedVariant.productVariantId, Number(quantity));
+      toast.success("Stock reduced successfully!");
     }
 
-    try {
-      if (modalType === "add" && selectedVariant) {
-        const response = await addStock(
-          selectedVariant.productVariantId,
-          parseInt(quantity)
-        );
-        toast.success(response.message);
-        setVariants((prev) =>
-          prev.map((v) =>
-            v.productVariantId === selectedVariant.productVariantId
-              ? { ...v, stock: response.stock.availableStock }
-              : v
-          )
-        );
-      } else if (modalType === "reduce" && selectedVariant) {
-        const response = await reduceStock(
-          selectedVariant.productVariantId,
-          parseInt(quantity)
-        );
-        toast.success(response.message);
-        setVariants((prev) =>
-          prev.map((v) =>
-            v.productVariantId === selectedVariant.productVariantId
-              ? { ...v, stock: response.stock.availableStock }
-              : v
-          )
-        );
-      }
-      closeModal();
-    } catch {
-      toast.error("Operation failed");
-    }
-  };
+    // Refresh stock list
+    const res = await fetch("http://localhost:5000/api/product-stock");
+const stockJson = await res.json();
+
+const stockArray = Array.isArray(stockJson)
+  ? stockJson
+  : stockJson.data || [];
+
+setVariants((prev) =>
+  prev.map((v) => {
+    const updatedStock = stockArray.find(
+      (s: Stock) => s.productVariantId === v.productVariantId
+    );
+    return {
+      ...v,
+      stock: updatedStock ? updatedStock.availableStock : v.stock,
+      soldStock: updatedStock ? updatedStock.soldStock : v.soldStock,
+    };
+  })
+);
+
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update stock");
+  }
+};
+
 
   if (loading) return <p>Loading...</p>;
 
@@ -164,16 +158,17 @@ export default function ProductStock() {
                 </td>
                 <td className="p-2 border flex gap-2">
                   <button
-                    onClick={() => openModal(variant, "add")}
-                    className="bg-green-500 text-white px-3 py-1 rounded"
-                  >
-                    Add
-                  </button>
+  onClick={() => openModal(variant, "add")}
+  className="bg-green-500 text-white px-2 py-1 rounded"
+>
+  + Add
+</button>
+                  
                   <button
-                    onClick={() => openModal(variant, "reduce")}
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Reduce
+  onClick={() => openModal(variant, "reduce")}
+  className="bg-red-500 text-white px-2 py-1 rounded"
+>
+  - Reduce
                   </button>
                 </td>
               </tr>

@@ -105,17 +105,15 @@ const othersItems: NavItem[] = [
   // },
   {
     icon: <BoxCubeIcon />,
-    name: "New Orders",
+    name: "All Orders",
     path: "/product-orders",
-    // subItems: [
-    //   { name: "Alerts", path: "/alerts", pro: false },
-    //   { name: "Avatar", path: "/avatars", pro: false },
-    //   { name: "Badge", path: "/badge", pro: false },
-    //   { name: "Buttons", path: "/buttons", pro: false },
-    //   { name: "Images", path: "/images", pro: false },
-    //   { name: "Videos", path: "/videos", pro: false },
-    // ],
   },
+  {
+    icon: <BoxCubeIcon />,
+    name: "New Orders",
+    path: "/view-orders",
+  },
+  
   // {
   //   icon: <PlugInIcon />,
   //   name: "Authentication",

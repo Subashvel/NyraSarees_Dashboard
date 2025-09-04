@@ -53,6 +53,7 @@ export default function ProductComponents() {
   const [variantBlocks, setVariantBlocks] = useState<number[]>([Date.now()]);
 
   const [variants, setVariants] = useState<any[]>([]);
+  const [filterCategoryId, setFilterCategoryId] = useState("");
 
   const [form, setForm] = useState({
     productName: "",
@@ -171,18 +172,19 @@ export default function ProductComponents() {
   };
 
   const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-) => {
-  const { name, value } = e.target;
-  setForm({ ...form, [name]: value });
-  validateField(name, value);
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    validateField(name, value);
 
-  // Re-validate Offer Price if MRP changes
-  if (name === "productMrpPrice" && form.productOfferPrice) {
-    validateField("productOfferPrice", form.productOfferPrice);
-  }
-};
-
+    // Re-validate Offer Price if MRP changes
+    if (name === "productMrpPrice" && form.productOfferPrice) {
+      validateField("productOfferPrice", form.productOfferPrice);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -250,22 +252,25 @@ export default function ProductComponents() {
 
       // 🔹 Save Variants
       for (const variant of variants) {
-  const variantData = new FormData();
-  variantData.append("productId", productId);
-  variantData.append("productColor", variant.productColor);
-  variantData.append("stockQuantity", variant.stockQuantity || "0");
-  variantData.append("lowStock", variant.lowStock || "0");
+        const variantData = new FormData();
+        variantData.append("productId", productId);
+        variantData.append("productColor", variant.productColor);
+        variantData.append("stockQuantity", variant.stockQuantity || "0");
+        variantData.append("lowStock", variant.lowStock || "0");
 
-  if (variant.productVariantImage) {
-    variantData.append("productVariantImage", variant.productVariantImage);
-  }
+        if (variant.productVariantImage) {
+          variantData.append(
+            "productVariantImage",
+            variant.productVariantImage
+          );
+        }
 
-  // FIX: Append checkbox values
-  variantData.append("isNewArrival", String(variant.isNewArrival));
-  variantData.append("isBestSeller", String(variant.isBestSeller));
-  variantData.append("isTrending", String(variant.isTrending));
+        // FIX: Append checkbox values
+        variantData.append("isNewArrival", String(variant.isNewArrival));
+        variantData.append("isBestSeller", String(variant.isBestSeller));
+        variantData.append("isTrending", String(variant.isTrending));
 
-  const savedVariant = await createProductVariant(variantData);
+        const savedVariant = await createProductVariant(variantData);
 
         // 🔹 Upload only valid child images
         if (variant.childImages?.length) {
@@ -316,75 +321,76 @@ export default function ProductComponents() {
   };
 
   const validateField = (name: string, value: string) => {
-  let error = "";
+    let error = "";
 
-  switch (name) {
-    case "categoryId":
-      if (!value) error = "Category is required";
-      break;
-    case "subCategoryId":
-      if (!value) error = "Subcategory is required";
-      break;
-    case "productName":
-      if (!value.trim()) error = "Product name is required";
-      else if (value.trim().length < 3)
-        error = "Product Name should be at least 3 characters long";
-      break;
-    case "productDescription":
-      if (!value.trim()) error = "Product Description is required";
-      else if (value.trim().length < 3)
-        error = "Product Description should be at least 3 characters long";
-      else if (value.length > 500)
-        error = "Product Description cannot exceed 500 characters";
-      break;
-    case "brandName":
-      if (!value.trim()) error = "Product Brand name is required";
-      else if (value.trim().length < 3)
-        error = "Product Brand Name should be at least 3 characters long";
-      else if (value.length > 50)
-        error = "Product Brand name cannot exceed 50 characters";
-      break;
-    case "material":
-      if (!value.trim()) error = "Product Material is required";
-      else if (value.trim().length < 3)
-        error = "Product Material Name should be at least 3 characters long";
-      else if (value.length > 50)
-        error = "Product Material cannot exceed 50 characters";
-      break;
-    case "productMrpPrice":
-      if (!value.trim()) {
-        error = "Product MRP Price is required";
-      } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-        error = "Product MRP Price must be a valid number";
-      }
-      break;
-
-    case "productOfferPrice":
-      if (!value.trim()) {
-        error = "Product Offer Price is required";
-      } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-        error = "Product Offer Price must be a valid number";
-      } else {
-        const mrp = parseFloat(form.productMrpPrice || "0");
-        const offer = parseFloat(value);
-        if (offer > mrp) {
-          error = "Product Offer Price should not be more than Product MRP Price";
+    switch (name) {
+      case "categoryId":
+        if (!value) error = "Category is required";
+        break;
+      case "subCategoryId":
+        if (!value) error = "Subcategory is required";
+        break;
+      case "productName":
+        if (!value.trim()) error = "Product name is required";
+        else if (value.trim().length < 3)
+          error = "Product Name should be at least 3 characters long";
+        break;
+      case "productDescription":
+        if (!value.trim()) error = "Product Description is required";
+        else if (value.trim().length < 3)
+          error = "Product Description should be at least 3 characters long";
+        else if (value.length > 500)
+          error = "Product Description cannot exceed 500 characters";
+        break;
+      case "brandName":
+        if (!value.trim()) error = "Product Brand name is required";
+        else if (value.trim().length < 3)
+          error = "Product Brand Name should be at least 3 characters long";
+        else if (value.length > 50)
+          error = "Product Brand name cannot exceed 50 characters";
+        break;
+      case "material":
+        if (!value.trim()) error = "Product Material is required";
+        else if (value.trim().length < 3)
+          error = "Product Material Name should be at least 3 characters long";
+        else if (value.length > 50)
+          error = "Product Material cannot exceed 50 characters";
+        break;
+      case "productMrpPrice":
+        if (!value.trim()) {
+          error = "Product MRP Price is required";
+        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+          error = "Product MRP Price must be a valid number";
         }
-      }
-      break;
-    default:
-      break;
-  }
+        break;
 
-  setErrors((prev) => ({ ...prev, [name]: error }));
-};
+      case "productOfferPrice":
+        if (!value.trim()) {
+          error = "Product Offer Price is required";
+        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+          error = "Product Offer Price must be a valid number";
+        } else {
+          const mrp = parseFloat(form.productMrpPrice || "0");
+          const offer = parseFloat(value);
+          if (offer > mrp) {
+            error =
+              "Product Offer Price should not be more than Product MRP Price";
+          }
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const filteredProducts = filterCategoryId
+  ? products.filter((p) => String(p.categoryId) === String(filterCategoryId))
+  : products;
 
 
-  const filteredProducts = form.categoryId
-    ? products.filter((p) => String(p.categoryId) === String(form.categoryId))
-    : products;
-
-    const filteredSubCategories = subCategories.filter(
+  const filteredSubCategories = subCategories.filter(
     (sc) => sc.categoryId === Number(form.categoryId || 0)
   );
 
@@ -394,23 +400,17 @@ export default function ProductComponents() {
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-xl font-semibold">Products</h2>
         <select
-          value={form.categoryId || ""}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              categoryId: e.target.value,
-              subCategoryId: "",
-            })
-          }
-          // className="w-full border rounded px-3 py-2 mb-3"
-        >
-          <option value="">Select Category</option>
-          {categories.map((c) => (
-            <option key={c.categoryId} value={c.categoryId}>
-              {c.categoryName}
-            </option>
-          ))}
-        </select>
+  value={filterCategoryId}
+  onChange={(e) => setFilterCategoryId(e.target.value)}
+>
+  <option value="">All Categories</option>
+  {categories.map((c) => (
+    <option key={c.categoryId} value={c.categoryId}>
+      {c.categoryName}
+    </option>
+  ))}
+</select>
+
         <button
           onClick={openAddModal}
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
@@ -549,7 +549,7 @@ export default function ProductComponents() {
                   value={form.subCategoryId || ""}
                   onChange={(e) => {
                     const value = e.target.value;
-                    setForm({ ...form, subCategoryId: value,  });
+                    setForm({ ...form, subCategoryId: value });
                     setErrors((prev) => ({
                       ...prev,
                       subCategoryId: value
@@ -643,6 +643,7 @@ export default function ProductComponents() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* <label className="block mb-1 text-sm">Product Variant Price</label> */}
               <div>
                 <label className="block mb-1 text-sm">Product MRP Price</label>
                 <input
@@ -748,42 +749,43 @@ export default function ProductComponents() {
             {/* <h3 className="text-lg font-semibold mb-4 mt-10">
               Product Variants
             </h3> */}
+            
+            {/* Variants - Only show in Add Product mode */}
+{!editingProduct && (
+  <>
+    {variantBlocks.map((blockId) => (
+      <VariantBlock
+        key={blockId}
+        productId={editingProduct ? editingProduct : 0}
+        onChange={(data) => {
+          setVariants((prev) => {
+            const updated = [...prev];
+            const idx = updated.findIndex((v) => v.blockId === blockId);
+            if (idx >= 0) {
+              updated[idx] = { ...data, blockId };
+            } else {
+              updated.push({ ...data, blockId });
+            }
+            return updated;
+          });
+        }}
+        onDelete={() => {
+          setVariantBlocks((prev) => prev.filter((id) => id !== blockId));
+          setVariants((prev) => prev.filter((v) => v.blockId !== blockId));
+        }}
+      />
+    ))}
 
-            {variantBlocks.map((blockId) => (
-              <VariantBlock
-                key={blockId}
-                productId={editingProduct ? editingProduct.productId : 0}
-                onChange={(data) => {
-                  setVariants((prev) => {
-                    const updated = [...prev];
-                    const idx = updated.findIndex((v) => v.blockId === blockId);
+    <button
+      type="button"
+      onClick={() => setVariantBlocks((prev) => [...prev, Date.now()])}
+      className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
+    >
+      + Add Another Variant
+    </button>
+  </>
+)}
 
-                    if (idx >= 0) {
-                      updated[idx] = { ...data, blockId };
-                    } else {
-                      updated.push({ ...data, blockId });
-                    }
-                    return updated;
-                  });
-                }}
-                onDelete={() => {
-                  setVariantBlocks((prev) =>
-                    prev.filter((id) => id !== blockId)
-                  );
-                  setVariants((prev) =>
-                    prev.filter((v) => v.blockId !== blockId)
-                  );
-                }}
-              />
-            ))}
-
-            <button
-              type="button"
-              onClick={() => setVariantBlocks((prev) => [...prev, Date.now()])}
-              className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
-            >
-              + Add Another Variant
-            </button>
 
             {/* Submit Product */}
             <div className="mt-4 flex justify-center">
