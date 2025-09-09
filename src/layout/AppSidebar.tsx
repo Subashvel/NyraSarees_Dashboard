@@ -3,24 +3,31 @@ import { Link, useLocation } from "react-router";
 
 // Assume these icons are imported from an icon library
 import {
-  BoxCubeIcon,
-  // CalenderIcon,
+  CustomersIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
-  // ListIcon,
-  // PageIcon,
-  // PieChartIcon,
-  // PlugInIcon,
-  // TableIcon,
-  // UserCircleIcon,
-  ProdIcon,
-  // ListIcon,
-  // ChevronUpIcon,
-  // PaperPlaneIcon,
+  ContactIcon,
+  CollectionBannerIcon,
+  BannerIcon,
+  ProductIcon,
+  CategoryIcon,
+  VariantIcon,
+  CouponIcon,
+  StockIcon,
+  AllOrdersIcon,
+  NewOrdersIcon,
+  DeliveredIcon,
+  OrderReportsIcon,
+  OutOfDeliveryIcon,
+  DispatchOrdersIcon,
+  PackageOrdersIcon,
+  SubCategoryIcon,
   
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+
+
 // import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -104,13 +111,13 @@ const othersItems: NavItem[] = [
   //   ],
   // },
   {
-    icon: <BoxCubeIcon />,
+    icon: <AllOrdersIcon />,
     name: "All Orders",
     path: "/product-orders",
   },
   {
-    icon: <BoxCubeIcon />,
-    name: "New Orders",
+    icon: <NewOrdersIcon />,
+    name: "New Orders", 
     path: "/view-orders",
   },
   
@@ -128,35 +135,41 @@ const othersItems: NavItem[] = [
   //   path: "/view-orders",
   // },
   {
-    icon: <BoxCubeIcon />,
+    icon: <PackageOrdersIcon />,
     name: "Package Orders",
     path: "/productpacking",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <DispatchOrdersIcon />,
     name: "Dispatched Orders",
     path: "/productdispatch",
   },
   {
-    icon: <BoxCubeIcon />,
-    name: "Out Of Delivery Orders",
+    icon: <OutOfDeliveryIcon />,
+    name: "Out for Delivery Orders",
     path: "/productdelivery",
   },
   {
-    icon: <BoxCubeIcon />,
+    icon: <DeliveredIcon />,
     name: "Delivered Orders",
     path: "/productcomplete",
+  },
+  {
+    icon: <OrderReportsIcon />,
+    name: "Order Reports",
+    path: "/order-reports",
   }
+
 ];
 
 const bannerItems: NavItem[] = [
   {
-    icon: <ProdIcon />,
+    icon: <BannerIcon />,
     name: "Banner Images",
     path: "/homebanner",
   },
   {
-    icon: <ProdIcon />,
+    icon: <CollectionBannerIcon />,
     name: "Collection Banner",
     path: "/collectionbanner",
   },
@@ -165,12 +178,12 @@ const bannerItems: NavItem[] = [
 
 const customerItems: NavItem[] = [
   {
-    icon: <ProdIcon />,
+    icon: <CustomersIcon />,
     name: "Customers",
     path: "/customers",
   },
   {
-    icon: <ProdIcon />,
+    icon: <ContactIcon />,
     name: "Contact Details",
     path: "/contactdetails",
   },
@@ -179,35 +192,35 @@ const customerItems: NavItem[] = [
 
 const productItems: NavItem[] = [
   {
-    icon: <ProdIcon />,
+    icon: <CategoryIcon />,
     name: "Category",
     path: "/categories",
   },
   {
-    icon: <ProdIcon />,
+    icon: <SubCategoryIcon />,
     name: "Sub Category",
     path: "/subcategories",
   },
   {
-    icon: <ProdIcon />,
+    icon: <ProductIcon />,
     name: "Products",
     path: "/products",
   },
   
   {
-    icon: <ProdIcon />,
+    icon: <VariantIcon />,
     name: "Product Variant",
     path: "/product-variants",
   },
 
   {
-    icon: <ProdIcon />,
+    icon: <CouponIcon />,
     name: "Coupons",
     path: "/Coupons",
   },
 
   {
-    icon: <ProdIcon />,
+    icon: <StockIcon />,
     name: "Product Stocks",
     path: "/product-stock",
   },

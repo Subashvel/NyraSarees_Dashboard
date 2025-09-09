@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { getColorName, getColorHex, cssColorNames } from "../../utils/colorUtils";
+import {
+  getColorName,
+  getColorHex,
+} from "../../utils/colorUtils";
 
 import { ChromePicker } from "react-color";
 import Swal from "sweetalert2";
@@ -96,9 +99,9 @@ export default function ProductVariants() {
     childImages: "",
   });
   const [filters, setFilters] = useState({
-  categoryId: "",
-  subCategoryId: ""
-});
+    categoryId: "",
+    subCategoryId: "",
+  });
 
   // --- Fetch Data ---
   useEffect(() => {
@@ -299,73 +302,81 @@ export default function ProductVariants() {
 
   // --- Submit ---
   const handleSubmit = async () => {
-  const validationErrors = {
-    categoryId: form.categoryId ? "" : "Category name is required",
-    subCategoryId: form.subCategoryId ? "" : "Subcategory name is required",
-    productId: form.productId ? "" : "Product name is required",
-    productColor: form.productColor ? "" : "Color is required",
-    stockQuantity: !form.stockQuantity
-      ? "Stock quantity is required"
-      : !/^\d+(\.\d+)?$/.test(form.stockQuantity)
-      ? "Stock quantity must be a number"
-      : "",
-    lowStock: !form.lowStock
-      ? "Low stock is required"
-      : !/^\d+$/.test(form.lowStock)
-      ? "Low stock must be a number"
-      : "",
-    productVariantImage: form.productVariantImage
-      ? ""
-      : "Variant image is required",
-    childImages:
-      childImages.length === 0
-        ? "At least one thumb image is required"
+    const validationErrors = {
+      categoryId: form.categoryId ? "" : "Category name is required",
+      subCategoryId: form.subCategoryId ? "" : "Subcategory name is required",
+      productId: form.productId ? "" : "Product name is required",
+      productColor: form.productColor ? "" : "Color is required",
+      stockQuantity: !form.stockQuantity
+        ? "Stock quantity is required"
+        : !/^\d+(\.\d+)?$/.test(form.stockQuantity)
+        ? "Stock quantity must be a number"
         : "",
+      lowStock: !form.lowStock
+        ? "Low stock is required"
+        : !/^\d+$/.test(form.lowStock)
+        ? "Low stock must be a number"
+        : "",
+      productVariantImage: form.productVariantImage
+        ? ""
+        : "Variant image is required",
+      childImages:
+        (!editingId && childImages.length === 0)
+          ? "At least one thumb image is required"
+          : "",
+    };
+
+    setErrors(validationErrors);
+
+    // stop if any errors exist
+    if (Object.values(validationErrors).some((err) => err)) return;
+
+    try {
+      const formData = new FormData();
+      // Always store hex value in backend
+      formData.append("productId", form.productId.toString());
+      formData.append("productColor", getColorHex(form.productColor) || form.productColor);
+      formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
+      formData.append("lowStock", form.lowStock?.toString() || "0");
+      formData.append(
+        "productVariantImage",
+        form.productVariantImage?.toString() || "0"
+      );
+
+      if (form.productVariantImage instanceof File) {
+  formData.append("productVariantImage", form.productVariantImage);
+} else if (typeof form.productVariantImage === "string") {
+  formData.append("existingImage", form.productVariantImage); // backend must handle this
+}
+
+      formData.append("isNewArrival", String(form.isNewArrival));
+      formData.append("isBestSeller", String(form.isBestSeller));
+      formData.append("isTrending", String(form.isTrending));
+
+      let savedVariant;
+      if (editingId) {
+        savedVariant = await updateProductVariant(editingId, formData);
+        toast.success("Variant updated successfully!");
+      } else {
+        savedVariant = await createProductVariant(formData);
+        toast.success("Variant created successfully!");
+      }
+
+      if (childImages.length > 0 && savedVariant?.data?.productVariantId) {
+        await uploadChildImages(
+          savedVariant.data.productVariantId,
+          childImages
+        );
+        toast.success("Thumb images uploaded!");
+      }
+
+      resetForm();
+      fetchVariants();
+    } catch (err) {
+      console.error("Error submitting form", err);
+      toast.error("Failed to save variant");
+    }
   };
-
-  setErrors(validationErrors);
-
-  // stop if any errors exist
-  if (Object.values(validationErrors).some((err) => err)) return;
-
-  try {
-    const formData = new FormData();
-    formData.append("productId", form.productId.toString());
-    formData.append("productColor", form.productColor);
-    formData.append("stockQuantity", form.stockQuantity?.toString() || "0");
-    formData.append("lowStock", form.lowStock?.toString() || "0");
-    formData.append("productVariantImage", form.productVariantImage?.toString() || "0");
-
-    if (form.productVariantImage instanceof File) {
-      formData.append("productVariantImage", form.productVariantImage);
-    }
-
-    formData.append("isNewArrival", String(form.isNewArrival));
-    formData.append("isBestSeller", String(form.isBestSeller));
-    formData.append("isTrending", String(form.isTrending));
-
-    let savedVariant;
-    if (editingId) {
-      savedVariant = await updateProductVariant(editingId, formData);
-      toast.success("Variant updated successfully!");
-    } else {
-      savedVariant = await createProductVariant(formData);
-      toast.success("Variant created successfully!");
-    }
-
-    if (childImages.length > 0 && savedVariant?.data?.productVariantId) {
-      await uploadChildImages(savedVariant.data.productVariantId, childImages);
-      toast.success("Child images uploaded!");
-    }
-
-    resetForm();
-    fetchVariants();
-  } catch (err) {
-    console.error("Error submitting form", err);
-    toast.error("Failed to save variant");
-  }
-};
-
 
   // --- Delete ---
   const handleDelete = (id: number) => {
@@ -397,7 +408,7 @@ export default function ProductVariants() {
       productColor: variant.productColor,
       stockQuantity: variant.stockQuantity,
       lowStock: variant.lowStock,
-      productVariantImage: null,
+      productVariantImage: variant.productVariantImage,
       isNewArrival: variant.isNewArrival || false,
       isBestSeller: variant.isBestSeller || false,
       isTrending: variant.isTrending || false,
@@ -438,17 +449,16 @@ export default function ProductVariants() {
   };
 
   const filteredVariants = variants.filter((v) => {
-  const matchesCategory = filters.categoryId
-    ? v.Product?.categoryId === Number(filters.categoryId)
-    : true;
+    const matchesCategory = filters.categoryId
+      ? v.Product?.categoryId === Number(filters.categoryId)
+      : true;
 
-  const matchesSubCategory = filters.subCategoryId
-    ? v.Product?.subCategoryId === Number(filters.subCategoryId)
-    : true;
+    const matchesSubCategory = filters.subCategoryId
+      ? v.Product?.subCategoryId === Number(filters.subCategoryId)
+      : true;
 
-  return matchesCategory && matchesSubCategory;
-});
-
+    return matchesCategory && matchesSubCategory;
+  });
 
   // --- Filters ---
   const filteredSubCategories = subCategories.filter(
@@ -465,42 +475,42 @@ export default function ProductVariants() {
         <h2 className="text-xl font-semibold">Product Variants</h2>
 
         <select
-  value={filters.categoryId}
-  onChange={(e) =>
-    setFilters({
-      ...filters,
-      categoryId: e.target.value,
-      subCategoryId: ""
-    })
-  }
->
-  <option value="">Select Category</option>
-  {categories.map((c) => (
-    <option key={c.categoryId} value={c.categoryId}>
-      {c.categoryName}
-    </option>
-  ))}
-</select>
+          value={filters.categoryId}
+          onChange={(e) =>
+            setFilters({
+              ...filters,
+              categoryId: e.target.value,
+              subCategoryId: "",
+            })
+          }
+        >
+          <option value="">Select Category</option>
+          {categories.map((c) => (
+            <option key={c.categoryId} value={c.categoryId}>
+              {c.categoryName}
+            </option>
+          ))}
+        </select>
 
-<select
-  value={filters.subCategoryId}
-  onChange={(e) =>
-    setFilters({
-      ...filters,
-      subCategoryId: e.target.value
-    })
-  }
-  disabled={!filters.categoryId}
->
-  <option value="">Select SubCategory</option>
-  {subCategories
-    .filter((sc) => sc.categoryId === Number(filters.categoryId || 0))
-    .map((sc) => (
-      <option key={sc.subCategoryId} value={sc.subCategoryId}>
-        {sc.subCategoryName}
-      </option>
-    ))}
-</select>
+        <select
+          value={filters.subCategoryId}
+          onChange={(e) =>
+            setFilters({
+              ...filters,
+              subCategoryId: e.target.value,
+            })
+          }
+          disabled={!filters.categoryId}
+        >
+          <option value="">Select SubCategory</option>
+          {subCategories
+            .filter((sc) => sc.categoryId === Number(filters.categoryId || 0))
+            .map((sc) => (
+              <option key={sc.subCategoryId} value={sc.subCategoryId}>
+                {sc.subCategoryName}
+              </option>
+            ))}
+        </select>
 
         <button
           onClick={() => {
@@ -539,7 +549,13 @@ export default function ProductVariants() {
                   {v.Product?.SubCategory?.subCategoryName || "N/A"}
                 </td>
                 <td className="px-4 py-2">{v.Product?.productName || "-"}</td>
-                <td className="px-4 py-2">{v.productColor}</td>
+                <td className="px-4 py-2">
+                  <div
+                    className="w-10 h-10 rounded border"
+                    style={{ backgroundColor: v.productColor }}
+                    title={v.productColor}
+                  ></div>
+                </td>
                 <td>{v.Stock ? v.Stock.availableStock : 0}</td>
                 <td className="px-4 py-2">{v.lowStock}</td>
                 <td className="px-4 py-2">
@@ -682,7 +698,7 @@ export default function ProductVariants() {
               {editingId && existingChildImages.length > 0 && (
                 <div className="mt-4">
                   <label className="block mb-2 text-sm font-semibold">
-                    Existing Child Images
+                    Existing Thumb Images
                   </label>
                   <div className="flex flex-wrap gap-3">
                     {existingChildImages.map((img) => (
@@ -704,59 +720,65 @@ export default function ProductVariants() {
               )}
               <div>
                 <label className="block mb-1 text-sm">Product Color</label>
+                <div className="mt-3 flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded border"
+                    style={{
+                      backgroundColor:
+                        getColorHex(form.productColor) || form.productColor,
+                    }}
+                  ></div>
+                  <span className="text-sm font-medium">
+                    {getColorName(getColorHex(form.productColor)) ||
+                      form.productColor}
+                  </span>
+                </div>
                 {/* Inputs */}
                 <input
-    type="text"
-    placeholder="Color"
-    value={form.productColor || ""}
-    onChange={(e) => {
-      const value = e.target.value;
-      setForm({ ...form, productColor: value });
-      setErrors((prev) => ({
-        ...prev,
-        productColor: value.trim() ? "" : "Color is required",
-      }));
-    }}
-    list="color-list"
-    className={`w-full border rounded px-3 py-2 mb-1 ${
-      errors.productColor ? "border-red-500" : "border-gray-300"
-    }`}
-  />
+                  type="text"
+                  placeholder="Color"
+                  value={form.productColor || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm({ ...form, productColor: value });
+                    setErrors((prev) => ({
+                      ...prev,
+                      productColor: value.trim() ? "" : "Color is required",
+                    }));
+                  }}
+                  list="color-list"
+                  className={`w-full border rounded px-3 py-2 mb-1 ${
+                    errors.productColor ? "border-red-500" : "border-gray-300"
+                  }`}
+                />
 
-  {/* Suggestions from CSS colors */}
-  <datalist id="color-list">
+                {/* Suggestions from CSS colors */}
+                {/* <datalist id="color-list">
     {cssColorNames.map((c) => (
       <option key={c} value={c} />
     ))}
-  </datalist>
+  </datalist> */}
 
-  {/* Chrome Picker → still picks hex but saves readable color name */}
-  <div className="mt-2">
-    <ChromePicker
-  color={getColorHex(form.productColor) || "#000000"}
+                {/* Chrome Picker → still picks hex but saves readable color name */}
+                <div className="mt-2">
+                  <ChromePicker
+  color={form.productColor || "#000000"}
   onChangeComplete={(color) => {
     const hex = color.hex.toUpperCase();
-    const name = getColorName(hex) || hex;
-    setForm({ ...form, productColor: name });
+    const name = getColorName(hex); // try to find a name
+    setForm({
+      ...form,
+      productColor: name || hex, // save name if found, else fallback hex
+    });
   }}
   disableAlpha
 />
+                </div>
 
-  </div>
-
-  {/* Show color preview swatch */}
-  {form.productColor && (
-    <div
-      className="w-10 h-10 mt-2 rounded border"
-      style={{ backgroundColor: getColorHex(form.productColor) || form.productColor }}
-      title={form.productColor}
-    ></div>
-  )}
-
-  {errors.productColor && (
-    <p className="text-red-500 text-xs">{errors.productColor}</p>
-  )}
-</div>
+                {errors.productColor && (
+                  <p className="text-red-500 text-xs">{errors.productColor}</p>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-bottom">
               <div>
@@ -928,51 +950,50 @@ export default function ProductVariants() {
                 </label>
               </div>
               {!(form.isNewArrival || form.isBestSeller || form.isTrending) && (
-    <p className="text-red-500 text-xs mt-1">At least one tag is required</p>
-  )}
+                <p className="text-red-500 text-xs mt-1">
+                  At least one tag is required
+                </p>
+              )}
             </div>
 
-
-
             {/* Child Images */}
             {/* Child Images */}
-<label className="block mt-4 text-sm font-semibold">
-  Thumb Images (726 × 967)
-</label>
+            <label className="block mt-4 text-sm font-semibold">
+              Thumb Images (726 × 967)
+            </label>
 
-{childImages.map((_, index) => (
-  <div key={index} className="flex flex-col gap-1 mb-2">
-    <div className="flex items-center gap-3">
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => handleChildImageChange(e, index)}
-        className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
-      />
+            {childImages.map((_, index) => (
+              <div key={index} className="flex flex-col gap-1 mb-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleChildImageChange(e, index)}
+                    className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
+                  />
 
-      {childPreview[index] && (
-        <div className="relative inline-block">
-          <img
-            src={childPreview[index]}
-            className="h-16 w-16 object-cover rounded border"
-          />
-          <button
-            onClick={() => removeChildImage(index)}
-            className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-    </div>
-  </div>
-))}
+                  {childPreview[index] && (
+                    <div className="relative inline-block">
+                      <img
+                        src={childPreview[index]}
+                        className="h-16 w-16 object-cover rounded border"
+                      />
+                      <button
+                        onClick={() => removeChildImage(index)}
+                        className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
 
-{/* ✅ Global inline error if no child images */}
-{errors.childImages && (
-  <p className="text-red-500 text-xs mb-2">{errors.childImages}</p>
-)}
-
+            {/* ✅ Global inline error if no child images */}
+            {errors.childImages && (
+              <p className="text-red-500 text-xs mb-2">{errors.childImages}</p>
+            )}
 
             <button
               type="button"

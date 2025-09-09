@@ -55,7 +55,24 @@ import { ReactComponent as ChatIcon } from "./chat.svg?react";
 import { ReactComponent as MoreDotIcon } from "./moredot.svg?react";
 import { ReactComponent as AlertHexaIcon } from "./alert-hexa.svg?react";
 import { ReactComponent as ErrorHexaIcon } from "./info-hexa.svg?react";
-import { ReactComponent as ProdIcon } from "./prod.svg?react";
+import { ReactComponent as ProductIcon } from "./product.svg?react";
+import { ReactComponent as CustomersIcon } from "./customers.svg?react";
+import { ReactComponent as ContactIcon } from "./contact.svg?react";
+import { ReactComponent as CollectionBannerIcon } from "./collectionbanner.svg?react";
+import { ReactComponent as BannerIcon } from "./banner.svg?react";
+import { ReactComponent as CategoryIcon } from "./category.svg?react";
+import { ReactComponent as SubCatIcon } from "./subcategoryy.svg?react";
+import { ReactComponent as VariantIcon } from "./variant.svg?react";
+import { ReactComponent as StockIcon } from "./stock.svg?react";
+import { ReactComponent as CouponIcon } from "./coupons.svg?react";
+import { ReactComponent as AllOrdersIcon } from "./allorders.svg?react";
+import { ReactComponent as NewOrdersIcon } from "./neworders.svg?react";
+import { ReactComponent as PackageOrdersIcon } from "./packageorders.svg?react";
+import { ReactComponent as OutOfDeliveryIcon } from "./outofdelivery.svg?react";
+import { ReactComponent as DispatchOrdersIcon } from "./dispatchorders.svg?react";
+import { ReactComponent as DeliveredIcon } from "./deliveredorders.svg?react";
+import { ReactComponent as OrderReportsIcon } from "./orderreports.svg?react";
+import { ReactComponent as SubCategoryIcon } from "./subbcategory.svg?react";
 export {
   ErrorHexaIcon,
   AlertHexaIcon,
@@ -113,5 +130,22 @@ export {
   ChatIcon,
   AngleLeftIcon,
   AngleRightIcon,
-  ProdIcon,
+  CustomersIcon,
+  ContactIcon,
+  CollectionBannerIcon,
+  BannerIcon,
+  CategoryIcon,
+  SubCatIcon,
+  VariantIcon,
+  StockIcon,
+  CouponIcon,
+  AllOrdersIcon,
+  NewOrdersIcon,
+  PackageOrdersIcon,
+  OutOfDeliveryIcon,
+  DeliveredIcon,
+  OrderReportsIcon,
+  DispatchOrdersIcon,
+  ProductIcon,
+  SubCategoryIcon,
 };

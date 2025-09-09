@@ -45,6 +45,7 @@ import CollectionbannerComponents from "./pages/CollectionBanner";
 import ContactTable from "./pages/Contact";
 import InvoicePage from "./components/orders/InvoicePage";
 import ProductDetailsPage from "./components/orders/ProductDetails";
+import OrdersReport from "./components/report/orderReport";
 
 // import Coupons from "./components/coupon/coupon";
 
@@ -107,7 +108,8 @@ export default function App() {
             <Route path="/collectionbanner" element={<CollectionbannerComponents />} />
             <Route path="/contactdetails" element={<ContactTable />} />
            
-            <Route path="/product/:variantId" element={<ProductDetailsPage productId={0} />} />
+            <Route path="/product/:variantId" element={<ProductDetailsPage product={0} />} />
+            <Route path="/order-reports" element={<OrdersReport />} />
             
           </Route>
            

@@ -13,14 +13,15 @@ import {
 } from "../ProductVariant/productVariantChildApi";
 
 interface VariantForm {
-  isNewArrival: boolean;
-  isBestSeller: boolean;
-  isTrending: boolean;
   productColor: string;
   stockQuantity: string;
   lowStock: string;
   productVariantImage: File | null;
+  isNewArrival: boolean;
+  isBestSeller: boolean;
+  isTrending: boolean;
 }
+
 
 interface VariantBlockProps {
   productId: number;
@@ -28,6 +29,7 @@ interface VariantBlockProps {
   onSaved?: () => void; // callback to refresh parent
   onDelete?: () => void;
   onChange?: (data: any) => void;
+  submitted: boolean;
 }
 const generateUniqueId = () =>
   `variant-${Math.random().toString(36).substr(2, 9)}`;
@@ -35,6 +37,7 @@ export default function VariantBlock({
   variantId,
   onDelete,
   onChange,
+  submitted 
 }: VariantBlockProps) {
   const [uniqueId] = useState(generateUniqueId());
 
@@ -61,7 +64,50 @@ export default function VariantBlock({
     productColor: "",
     stockQuantity: "",
     lowStock: "",
+    tags: "",
+  thumbImages: "",
+  variantImage: ""
   });
+
+  const validate = () => {
+    const newErrors: typeof errors = { productColor: "", stockQuantity: "", lowStock: "", tags: "", thumbImages: "", variantImage: ""  };
+
+    if (!form.productColor.trim()) {
+      newErrors.productColor = "Product Color is required";
+    }
+
+    if (!form.stockQuantity.trim()) {
+      newErrors.stockQuantity = "Stock Quantity is required";
+    } else if (!/^\d+$/.test(form.stockQuantity)) {
+      newErrors.stockQuantity = "Stock Quantity must be a number";
+    }
+
+    if (!form.lowStock.trim()) {
+      newErrors.lowStock = "Low Stock is required";
+    } else if (!/^\d+$/.test(form.lowStock)) {
+      newErrors.lowStock = "Low Stock must be a number";
+    }
+
+    // Tags
+  if (!form.isNewArrival && !form.isBestSeller && !form.isTrending) {
+    newErrors.tags = "At least one tag is required";
+  }
+
+  // Thumb Images
+  if (childImages.length === 0) {
+    newErrors.thumbImages = "At least one thumb image is required";
+  }
+
+  // Variant Image
+  if (!form.productVariantImage) {
+    newErrors.variantImage = "Variant image is required";
+  }
+
+    setErrors(newErrors);
+
+    // ✅ return true only if no errors
+    return Object.values(newErrors).every((v) => v === "");
+  };
   const [childImageErrors, setChildImageErrors] = useState<string[]>([]);
   const [variants, setVariants] = useState<any[]>([]);
 
@@ -95,6 +141,7 @@ const handleVariantChange = (index: number, data: any) => {
 
   // 🔹 Load existing images if edit mode
   useEffect(() => {
+    validate();
   if (onChange) {
     onChange({
       variantId,
@@ -172,92 +219,92 @@ const handleVariantChange = (index: number, data: any) => {
       </h4>
 
       {/* Text input for color name */}
-<input
-  type="text"
-  list="color-list"
-  placeholder="Enter color (e.g. Red, SkyBlue)"
-  value={form.productColor}
-  onChange={(e) => {
-    const value = e.target.value;
-    setForm({ ...form, productColor: value });
-    setErrors((prev) => ({
-      ...prev,
-      productColor: value.trim() ? "" : "Color is required",
-    }));
-  }}
-  className={`w-full border rounded px-3 py-2 mb-2 ${
-    errors.productColor ? "border-red-500" : "border-gray-300"
-  }`}
-/>
+      <div className="mb-2">
+        <label className="block font-medium">Product Color *</label>
+        <div className="mt-3 flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded border"
+                            style={{
+                              backgroundColor:
+                                getColorHex(form.productColor) || form.productColor,
+                            }}
+                          ></div>
+                          <span className="text-sm font-medium">
+                            {getColorName(getColorHex(form.productColor)) ||
+                              form.productColor}
+                          </span>
+                        </div>
+        <input
+          type="text"
+          className="border p-2 w-full rounded"
+          value={form.productColor}
+          onChange={(e) => setForm({ ...form, productColor: e.target.value })}
+        />
+        {submitted && errors.productColor && (
+          <p className="text-red-500 text-sm">{errors.productColor}</p>
+        )}
+      </div>
+
 
 {/* Autocomplete list with 140 CSS colors */}
-<datalist id="color-list">
+{/* <datalist id="color-list">
   {cssColorNames.map((c) => (
     <option key={c} value={c} />
   ))}
-</datalist>
+</datalist> */}
 
 {/* ChromePicker works in HEX but stores as name */}
-<ChromePicker
-  color={getColorHex(form.productColor) || "#000000"}
-  onChangeComplete={(color: ColorResult) => {
+<div className="mt-2">
+                  <ChromePicker
+  color={form.productColor || "#000000"}
+  onChangeComplete={(color) => {
     const hex = color.hex.toUpperCase();
-    const name = getColorName(hex);
-    setForm({ ...form, productColor: name });
+    const name = getColorName(hex); // try to find a name
+    setForm({
+      ...form,
+      productColor: name || hex, // save name if found, else fallback hex
+    });
   }}
   disableAlpha
 />
+                </div>
 
 
   {/* Preview Circle */}
-  {form.productColor && (
+  {/* {form.productColor && (
   <div
     className="w-8 h-8 mt-2 rounded-full border"
     style={{ backgroundColor: getColorHex(form.productColor) }}
     title={form.productColor}
   ></div>
-)}
+)} */}
 
 
-  {errors.productColor && (
-    <p className="text-red-500 text-xs">{errors.productColor}</p>
-  )}
 
-      <input
-        type="number"
-        placeholder="Stock Quantity"
-        value={form.stockQuantity}
-        onChange={(e) => {
-          const value = e.target.value;
-          setForm({ ...form, stockQuantity: value });
-          setErrors((prev) => ({
-            ...prev,
-            stockQuantity: value.trim() ? "" : "Stock quantity is required",
-          }));
-        }}
-        className="w-full border rounded px-3 py-2 mb-2"
-      />
-      {errors.stockQuantity && (
-        <p className="text-red-500 text-xs">{errors.stockQuantity}</p>
-      )}
-
-      <input
-        type="number"
-        placeholder="Low Stock"
-        value={form.lowStock}
-        onChange={(e) => {
-          const value = e.target.value;
-          setForm({ ...form, lowStock: value });
-          setErrors((prev) => ({
-            ...prev,
-            lowStock: value.trim() ? "" : "Low stock is required",
-          }));
-        }}
-        className="w-full border rounded px-3 py-2 mb-2"
-      />
-      {errors.lowStock && (
-        <p className="text-red-500 text-xs">{errors.lowStock}</p>
-      )}
+<div className="mb-2">
+        <label className="block font-medium">Stock Quantity *</label>
+        <input
+          type="text"
+          className="border p-2 w-full rounded"
+          value={form.stockQuantity}
+          onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })}
+        />
+        {submitted && errors.stockQuantity && (
+          <p className="text-red-500 text-sm">{errors.stockQuantity}</p>
+        )}
+      </div>
+<div className="mb-2">
+        <label className="block font-medium">Low Stock *</label>
+        <input
+          type="text"
+          className="border p-2 w-full rounded"
+          value={form.lowStock}
+          onChange={(e) => setForm({ ...form, lowStock: e.target.value })}
+        />
+        {submitted && errors.lowStock && (
+          <p className="text-red-500 text-sm">{errors.lowStock}</p>
+        )}
+      </div>
       <div>
       <label className="block mb-1 text-sm mt-3">Variant Image (726 × 967)</label>
 
@@ -285,6 +332,8 @@ const handleVariantChange = (index: number, data: any) => {
         }}
         className="focus:border-ring-brand-300 h-11 w-auto overflow-hidden rounded-lg border border-gray-300 bg-transparent text-sm text-gray-500 shadow-theme-xs transition-colors file:mr-5 file:border-collapse file:cursor-pointer file:rounded-l-lg file:border-0 file:border-r file:border-solid file:border-gray-200 file:bg-gray-50 file:py-3 file:pl-3.5 file:pr-3 file:text-sm file:text-gray-700 placeholder:text-gray-400 hover:file:bg-gray-100 focus:outline-hidden focus:file:ring-brand-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:text-white/90 dark:file:border-gray-800 dark:file:bg-white/[0.03] dark:file:text-gray-400 dark:placeholder:text-gray-400 custom-class"
       />
+
+      {submitted && errors.variantImage && <p className="text-red-500 text-xs">{errors.variantImage}</p>}
 
       {variantImageError && (
         <p className="text-red-500 text-xs mt-1">{variantImageError}</p>
@@ -336,6 +385,7 @@ const handleVariantChange = (index: number, data: any) => {
                   <span>Trending</span>
                 </label>
               </div>
+              {submitted && errors.tags && <p className="text-red-500 text-xs">{errors.tags}</p>}
             </div>
 
       </div>
@@ -358,11 +408,12 @@ const handleVariantChange = (index: number, data: any) => {
       <label className="block mb-1 text-sm mt-3">Thumb Images (726 × 967)</label>
       <button
         type="button"
-        onClick={() =>
+        onClick={() => {
           document
             .getElementById(`child-input-${variantId || uniqueId}`)
-            ?.click()
-        }
+            ?.click();
+          if (childImages.length === 0) setErrors((prev) => ({ ...prev, thumbImages: "At least one thumb image is required" }));
+        }}
         className="bg-blue-500 text-white px-3 py-1 rounded mb-2"
       >
         + Add Thumb Images
@@ -373,7 +424,17 @@ const handleVariantChange = (index: number, data: any) => {
         type="file"
         accept="image/*"
         multiple
-        onChange={handleChildImageChange}
+        onChange={e => {
+          handleChildImageChange(e);
+          // Clear error if at least one image is present after change
+          setTimeout(() => {
+            if (e.target.files && e.target.files.length > 0) {
+              setErrors((prev) => ({ ...prev, thumbImages: "" }));
+            } else if (childImages.length === 0) {
+              setErrors((prev) => ({ ...prev, thumbImages: "At least one thumb image is required" }));
+            }
+          }, 0);
+        }}
         className="hidden"
       />
 
@@ -394,6 +455,10 @@ const handleVariantChange = (index: number, data: any) => {
           </div>
         ))}
       </div>
+      {/* Show thumb image error only once below the section */}
+      {submitted && errors.thumbImages && (
+        <p className="text-red-500 text-xs mb-2">{errors.thumbImages}</p>
+      )}
 
       {/* <button
   type="button"
@@ -423,7 +488,15 @@ const handleVariantChange = (index: number, data: any) => {
           <div key={i} className="relative inline-block">
             <img src={src} className="w-16 h-16 rounded object-cover border" />
             <button
-              onClick={() => removeChildImage(i)}
+              onClick={() => {
+                removeChildImage(i);
+                // If no images left after removal, show error
+                setTimeout(() => {
+                  if (childImages.length - 1 === 0) {
+                    setErrors((prev) => ({ ...prev, thumbImages: "At least one thumb image is required" }));
+                  }
+                }, 0);
+              }}
               className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full"
             >
               ✕

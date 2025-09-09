@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import ProductDetailsPage from "./ProductDetails";
 import { useParams, useNavigate } from "react-router-dom";
 
-
 interface OrderResponse {
   success: boolean;
   order: any;
@@ -14,7 +13,7 @@ export default function InvoicePage() {
   const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null); // 👈 store full product snapshot
 
   useEffect(() => {
     if (!id) return;
@@ -64,62 +63,62 @@ export default function InvoicePage() {
         Invoice Number - {order.orderId}
       </h2>
       <p>Customer Name : {order.Bill?.fullName}</p>
-      <p>Customer Email Id: {order.Bill?.email}</p>
-      <p>Customer Phone Number: {order.Bill?.phoneNo}</p>
-      <p>
-        Customer Address:{" "}
-        {[order.Bill?.addressLine1, order.Bill?.addressLine2]
-          .filter(Boolean)
-          .join(", ")}
-      </p>
+<p>Customer Email Id: {order.Bill?.email}</p>
+<p>Customer Phone Number: {order.Bill?.phoneNo}</p>
+<p>
+  Customer Address:{" "}
+  {[order.Bill?.addressLine1, order.Bill?.addressLine2].filter(Boolean).join(", ")}
+</p>
 
-      <h3 className="mt-6 text-xl font-semibold">Items</h3>
-      <table className="w-full border mt-2">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 border">Product Image</th>
-            <th className="p-2 border">Product Name</th>
-            <th className="p-2 border">Product Qty</th>
-            <th className="p-2 border">Product Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          {order.OrderSlots?.map((item: any) => (
-            <tr key={item.id}>
-              <td className="p-2 border">
-                {item.product_variant_image ? (
-                  <img
-                    src={`http://localhost:5000/uploads/${item.product_variant_image}`}
-                    alt={item.productname}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                ) : (
-                  "No Image"
-                )}
-              </td>
-              <td className="p-2 border">{item.productname}</td>
-              <td className="p-2 border">{item.quantity}</td>
-              <td className="p-2 border">₹{item.total_price}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+<h3 className="mt-6 text-xl font-semibold">Items</h3>
+<table className="w-full border mt-2">
+  <thead>
+    <tr className="bg-gray-100">
+      <th className="p-2 border">Product Image</th>
+      <th className="p-2 border">Product Name</th>
+      <th className="p-2 border">Product Qty</th>
+      <th className="p-2 border">Product Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    {order.OrderSlots?.map((item: any) => (
+      <tr key={item.id}>
+        <td className="p-2 border">
+          {item.product_variant_image ? (
+            <img
+              src={`http://localhost:5000/uploads/${item.product_variant_image}`}
+              alt={item.productname}
+              className="w-16 h-16 object-cover rounded cursor-pointer"
+              onClick={() => setSelectedProduct(item)}
+            />
+          ) : (
+            "No Image"
+          )}
+        </td>
+        <td className="p-2 border">{item.productname}</td>
+        <td className="p-2 border">{item.quantity}</td>
+        <td className="p-2 border">₹{item.product_price}</td>
+        
+      </tr>
+    ))}
+  </tbody>
+</table>
 
       <p className="mt-4 font-semibold">
         Grand Total: ₹{order.grand_total_amount}
       </p>
 
       {/* Product Details Modal */}
-      {selectedProductId && (
+      {selectedProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg w-[600px] max-h-[80vh] overflow-auto relative">
             <button
-              onClick={() => setSelectedProductId(null)}
+              onClick={() => setSelectedProduct(null)}
               className="absolute top-2 right-2 text-red-500"
             >
               ✕
             </button>
-            <ProductDetailsPage productId={selectedProductId} />
+            <ProductDetailsPage product={selectedProduct} /> {/* 👈 pass snapshot */}
           </div>
         </div>
       )}

@@ -11,10 +11,8 @@ interface OrderItem {
   customerName: string;
   address: string;
   paymentStatus: "unpaid" | "paid";
-  deliveryStatus: "dispatch" | "packing" | "outfordelivery" | "delivered";
+  deliveryStatus: "packing" | "dispatch" | "outfordelivery" | "delivered";
 }
-
-
 
 // Helper function for badge styles
 const getStatusClass = (status: string) => {
@@ -23,9 +21,9 @@ const getStatusClass = (status: string) => {
       return "text-green-700 border border-green-300";
     case "unpaid":
       return "text-red-700 border border-red-300";
-    case "dispatch":
-      return "bg-purple-100 text-purple-700 border border-purple-300";
     case "packing":
+      return "bg-purple-100 text-purple-700 border border-purple-300";
+    case "dispatch":
       return "bg-blue-100 text-blue-700 border border-blue-300";
     case "outfordelivery":
       return "bg-orange-100 text-orange-700 border border-orange-300";
@@ -36,7 +34,6 @@ const getStatusClass = (status: string) => {
   }
 };
 
-
 export default function Orders() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +41,12 @@ export default function Orders() {
   const [deliveryStatus, setDeliveryStatus] = useState("pending");
   const [showModal, setShowModal] = useState(false);
 
-  const deliveryOptions = ["dispatch", "packing", "outfordelivery", "delivered"];
+  const deliveryOptions = [
+    "Packing",
+    "Dispatch",
+    "Out For Delivery",
+    "Delivered",
+  ];
   const paymentOptions = ["unpaid", "paid"];
 
   useEffect(() => {
@@ -52,25 +54,23 @@ export default function Orders() {
   }, []);
 
   const fetchOrders = async () => {
-  try {
-    const res = await fetch("http://localhost:5000/api/orders/all");
-    const json = await res.json();
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/all");
+      const json = await res.json();
 
-    if (json.success) {
-      // ✅ Show ALL orders
-      setOrders(json.orders);
-    } else {
-      setOrders([]);
+      if (json.success) {
+        // ✅ Show ALL orders
+        setOrders(json.orders);
+      } else {
+        setOrders([]);
+      }
+    } catch (err) {
+      console.error("Failed to load orders", err);
+      toast.error("Failed to fetch orders");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to load orders", err);
-    toast.error("Failed to fetch orders");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   const updateOrderStatus = async (
     id: number,
@@ -126,7 +126,7 @@ export default function Orders() {
             <th className="px-4 py-2">Customer Name</th>
             <th className="px-4 py-2">Address</th>
             <th className="px-4 py-2">Payment Status</th>
-            
+
             <th className="px-4 py-2">Order Status</th>
             <th className="px-4 py-2">Action</th>
           </tr>
@@ -152,18 +152,15 @@ export default function Orders() {
 
                 {/* Payment Status Badge */}
                 {/* Payment Status Badge in Table */}
-<td className="px-4 py-2">
-  <span
-    className={`px-2 py-1 rounded text-xs ${getStatusClass(
-      o.paymentStatus
-    )}`}
-  >
-    {o.paymentStatus}
-  </span>
-</td>
-
-
-                
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${getStatusClass(
+                      o.paymentStatus
+                    )}`}
+                  >
+                    {o.paymentStatus}
+                  </span>
+                </td>
 
                 <td className="px-4 py-2">
                   <button
@@ -174,17 +171,15 @@ export default function Orders() {
                   </button>
                 </td>
                 <td className="px-4 py-2">
-  <a
-    href={`${window.location.origin}/invoice/${o.id}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
-  >
-    View
-  </a>
-</td>
-
-
+                  <a
+                    href={`${window.location.origin}/invoice/${o.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                  >
+                    View
+                  </a>
+                </td>
               </tr>
             ))
           ) : (
@@ -208,34 +203,33 @@ export default function Orders() {
             <p>Customer: {selectedOrder?.Bill?.fullName || "N/A"}</p>
 
             {/* Payment Status Badge in Modal */}
-            
 
             {/* Payment Status Dropdown in Modal */}
             <div className="mt-4">
-  <label className="block mb-1 font-medium">Payment Status</label>
-  <select
-    value={selectedOrder.paymentStatus}
-    onChange={e =>
-      updateOrderStatus(selectedOrder.id, undefined, e.target.value)
-    }
-    className={`border rounded p-2 w-full ${getStatusClass(
-      selectedOrder.paymentStatus
-    )}`}
-  >
-    {paymentOptions.map(status => (
-      <option key={status} value={status}>
-        {status}
-      </option>
-    ))}
-  </select>
-</div>
+              <label className="block mb-1 font-medium">Payment Status</label>
+              <select
+                value={selectedOrder.paymentStatus}
+                onChange={(e) =>
+                  updateOrderStatus(selectedOrder.id, undefined, e.target.value)
+                }
+                className={`border rounded p-2 w-full ${getStatusClass(
+                  selectedOrder.paymentStatus
+                )}`}
+              >
+                {paymentOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <select
               value={deliveryStatus}
-              onChange={e => setDeliveryStatus(e.target.value)}
+              onChange={(e) => setDeliveryStatus(e.target.value)}
               className="border rounded p-2 w-full mt-3"
             >
-              {deliveryOptions.map(status => (
+              {deliveryOptions.map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>

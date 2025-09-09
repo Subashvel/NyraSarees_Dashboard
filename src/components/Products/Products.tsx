@@ -51,7 +51,7 @@ export default function ProductComponents() {
   const [productImage, setProductImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variantBlocks, setVariantBlocks] = useState<number[]>([Date.now()]);
-
+  const [submitted, setSubmitted] = useState(false);
   const [variants, setVariants] = useState<any[]>([]);
   const [filterCategoryId, setFilterCategoryId] = useState("");
 
@@ -209,91 +209,152 @@ export default function ProductComponents() {
   };
 
   const handleSubmit = async () => {
-    Object.entries(form).forEach(([name, value]) => validateField(name, value));
+  setSubmitted(true);
 
-    if (Object.values(errors).some((err) => err)) return;
-    if (!form.productName.trim() || !form.subCategoryId || !form.categoryId) {
-      toast.error("All Fields are required");
+  // 🔹 Run validation synchronously
+  const newErrors: any = {};
+  Object.entries(form).forEach(([name, value]) => {
+    let error = "";
+
+    switch (name) {
+      case "categoryId":
+        if (!value) error = "Category is required";
+        break;
+      case "subCategoryId":
+        if (!value) error = "Subcategory is required";
+        break;
+      case "productName":
+        if (!value.trim()) error = "Product name is required";
+        else if (value.trim().length < 3)
+          error = "Product Name should be at least 3 characters long";
+        break;
+      case "productDescription":
+        if (!value.trim()) error = "Product Description is required";
+        else if (value.trim().length < 3)
+          error = "Product Description should be at least 3 characters long";
+        else if (value.length > 500)
+          error = "Product Description cannot exceed 500 characters";
+        break;
+      case "brandName":
+        if (!value.trim()) error = "Product Brand name is required";
+        else if (value.trim().length < 3)
+          error = "Product Brand Name should be at least 3 characters long";
+        break;
+      case "material":
+        if (!value.trim()) error = "Product Material is required";
+        break;
+      case "productMrpPrice":
+        if (!value.trim()) error = "Product MRP Price is required";
+        else if (!/^\d+(\.\d{1,2})?$/.test(value))
+          error = "Product MRP Price must be a valid number";
+        break;
+      case "productOfferPrice":
+        if (!value.trim()) error = "Product Offer Price is required";
+        else if (!/^\d+(\.\d{1,2})?$/.test(value))
+          error = "Product Offer Price must be a valid number";
+        else {
+          const mrp = parseFloat(form.productMrpPrice || "0");
+          const offer = parseFloat(value);
+          if (offer > mrp)
+            error = "Product Offer Price should not be more than MRP";
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (error) newErrors[name] = error;
+  });
+
+  // 🔹 Set errors & stop if invalid
+  if (Object.keys(newErrors).length > 0) {
+    setErrors((prev) => ({ ...prev, ...newErrors }));
+    return;
+  }
+
+  // 🔹 Check variant existence
+  if (!variants.length) {
+    setErrors((prev) => ({
+      ...prev,
+      productName: "At least one variant is required",
+    }));
+    return;
+  }
+
+  // 🔹 Validate Variants
+  for (const variant of variants) {
+    if (
+      !variant.productColor ||
+      variant.variantImageError ||
+      variant.childImageErrors?.some(Boolean)
+    ) {
+      // setErrors((prev) => ({
+      //   ...prev,
+      //   productName: "Fix all variant errors before submitting",
+      // }));
       return;
     }
+  }
 
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => formData.append(key, value));
+  const formData = new FormData();
+  Object.entries(form).forEach(([key, value]) => formData.append(key, value));
 
-    if (productImage) formData.append("productImage", productImage);
-
-    try {
-      let productResponse;
-      if (editingProduct) {
-        productResponse = await updateProduct(
-          editingProduct.productId,
-          formData
-        );
-        toast.success("Product updated successfully!");
-      } else {
-        productResponse = await createProduct(formData);
-        toast.success("Product created successfully!");
-      }
-
-      const productId =
-        editingProduct?.productId || productResponse?.data?.productId;
-
-      // 🔹 Validate all variants before saving
-      for (const variant of variants) {
-        if (variant.variantImageError) {
-          toast.error("One or more variants have invalid main images.");
-          return;
-        }
-        if (variant.childImageErrors?.some((err: string) => err)) {
-          toast.error("One or more child images are invalid.");
-          return;
-        }
-      }
-
-      // 🔹 Save Variants
-      for (const variant of variants) {
-        const variantData = new FormData();
-        variantData.append("productId", productId);
-        variantData.append("productColor", variant.productColor);
-        variantData.append("stockQuantity", variant.stockQuantity || "0");
-        variantData.append("lowStock", variant.lowStock || "0");
-
-        if (variant.productVariantImage) {
-          variantData.append(
-            "productVariantImage",
-            variant.productVariantImage
-          );
-        }
-
-        // FIX: Append checkbox values
-        variantData.append("isNewArrival", String(variant.isNewArrival));
-        variantData.append("isBestSeller", String(variant.isBestSeller));
-        variantData.append("isTrending", String(variant.isTrending));
-
-        const savedVariant = await createProductVariant(variantData);
-
-        // 🔹 Upload only valid child images
-        if (variant.childImages?.length) {
-          const validChildImages = variant.childImages.filter(
-            (_: File, i: number) => !variant.childImageErrors?.[i]
-          );
-          if (validChildImages.length > 0) {
-            await uploadChildImages(
-              savedVariant?.data?.productVariantId,
-              validChildImages
-            );
-          }
-        }
-      }
-
-      setShowModal(false);
-      resetForm();
-      fetchProducts();
-    } catch (err) {
-      toast.error("Failed to save product");
-      console.error(err);
+  try {
+    let productResponse;
+    if (editingProduct) {
+      productResponse = await updateProduct(editingProduct.productId, formData);
+      toast.success("Product updated successfully!");
+    } else {
+      productResponse = await createProduct(formData);
+      toast.success("Product created successfully!");
     }
-  };
+
+    const productId =
+      editingProduct?.productId || productResponse?.data?.productId;
+
+    // 🔹 Save Variants
+    for (const variant of variants) {
+      const variantData = new FormData();
+      variantData.append("productId", productId);
+      variantData.append("productColor", variant.productColor);
+      variantData.append("stockQuantity", variant.stockQuantity || "0");
+      variantData.append("lowStock", variant.lowStock || "0");
+      variantData.append("isNewArrival", String(variant.isNewArrival));
+      variantData.append("isBestSeller", String(variant.isBestSeller));
+      variantData.append("isTrending", String(variant.isTrending));
+
+      if (variant.productVariantImage) {
+        variantData.append("productVariantImage", variant.productVariantImage);
+      }
+
+      const savedVariant = await createProductVariant(variantData);
+
+      if (variant.childImages?.length) {
+        const validChildImages = variant.childImages.filter(
+          (_: File, i: number) => !variant.childImageErrors?.[i]
+        );
+        if (validChildImages.length > 0) {
+          await uploadChildImages(
+            savedVariant?.data?.productVariantId,
+            validChildImages
+          );
+        }
+      }
+    }
+
+    setShowModal(false);
+    resetForm();
+    fetchProducts();
+  } catch (err) {
+    // setErrors((prev) => ({
+    //   ...prev,
+    //   productName: "Failed to save product. Please try again.",
+    // }));
+    console.error(err);
+  }
+};
+
+
 
   const handleDelete = (id: number) => {
     Swal.fire({
@@ -429,7 +490,7 @@ export default function ProductComponents() {
               <th className="px-4 py-2">Subcategory Name</th>
               <th className="px-4 py-2">Product Name</th>
               <th className="px-4 py-2">Product Brand</th>
-              <th className="px-4 py-2">Product Image</th>
+              {/* <th className="px-4 py-2">Product Image</th> */}
               <th className="px-4 py-2">Action</th>
             </tr>
           </thead>
@@ -461,13 +522,13 @@ export default function ProductComponents() {
                   </td>
                   <td className="px-4 py-2">{p.productName}</td>
                   <td className="px-4 py-2">{p.brandName}</td>
-                  <td className="px-4 py-2">
-                    <img
+                  {/* <td className="px-4 py-2"> */}
+                    {/* <img
                       src={p.productImage}
                       alt={p.productName}
                       className="w-16 h-16 object-cover rounded"
-                    />
-                  </td>
+                    /> */}
+                  {/* </td> */}
                   <td className="px-4 py-2">
                     <div className="flex gap-2">
                       <button
@@ -681,7 +742,7 @@ export default function ProductComponents() {
             </div>
 
             {/* Image */}
-            <label className="block mb-1 text-sm mt-3 ">Product Image</label>
+            {/* <label className="block mb-1 text-sm mt-3 ">Product Image</label>
             <input
               type="file"
               accept="image/png, image/jpeg"
@@ -690,8 +751,8 @@ export default function ProductComponents() {
             />
             {errors.productImage && (
               <p className="text-red-500 text-xs mt-1">{errors.productImage}</p>
-            )}
-            <div className="mb-10">
+            )} */}
+            {/* <div className="mb-10">
               <label className="block mb-1 text-sm font-medium">
                 Product Image (726 × 967)
               </label>
@@ -743,7 +804,7 @@ export default function ProductComponents() {
                 className="hidden"
                 onChange={handleImageChange}
               />
-            </div>
+            </div> */}
 
             {/* Variants */}
             {/* <h3 className="text-lg font-semibold mb-4 mt-10">
@@ -773,6 +834,7 @@ export default function ProductComponents() {
           setVariantBlocks((prev) => prev.filter((id) => id !== blockId));
           setVariants((prev) => prev.filter((v) => v.blockId !== blockId));
         }}
+        submitted={submitted}
       />
     ))}
 
