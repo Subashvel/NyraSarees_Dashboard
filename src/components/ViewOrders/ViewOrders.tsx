@@ -150,15 +150,15 @@ export default function ViewOrders() {
 
                 {/* Payment Status Badge */}
                 {/* Payment Status Badge in Table */}
-<td className="px-4 py-2">
-  <span
-    className={`px-2 py-1 rounded text-xs ${getStatusClass(
-      o.paymentStatus
-    )}`}
-  >
-    {o.paymentStatus}
-  </span>
-</td>
+               <td className="px-4 py-2">
+                 <span
+                   className={`px-2 py-1 rounded text-xs ${getStatusClass(
+                     o.paymentStatus
+                   )}`}
+                 >
+                   {o.paymentStatus}
+                 </span>
+               </td>
 
 
                 
@@ -173,7 +173,7 @@ export default function ViewOrders() {
                 </td>
                 <td className="px-4 py-2">
   <a
-    href={`${window.location.origin}/invoice/${o.id}`}
+    href={`${window.location.origin}/invoice/${o.orderId}`}
     target="_blank"
     rel="noopener noreferrer"
     className="bg-blue-500 text-white px-3 py-1 rounded text-sm"

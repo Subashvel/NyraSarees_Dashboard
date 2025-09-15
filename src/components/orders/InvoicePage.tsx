@@ -3,29 +3,29 @@ import toast from "react-hot-toast";
 import ProductDetailsPage from "./ProductDetails";
 import { useParams, useNavigate } from "react-router-dom";
 
-interface OrderResponse {
-  success: boolean;
-  order: any;
-}
-
 export default function InvoicePage() {
-  const { id } = useParams();
+  const { id } = useParams(); // orderId like "NYRA-ORD-38"
   const navigate = useNavigate();
-  const [order, setOrder] = useState<any>(null);
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null); // 👈 store full product snapshot
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    fetchOrderDetails();
+    fetchOrderHistory();
   }, [id]);
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderHistory = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/${id}`);
-      const data: OrderResponse = await res.json();
-      if (data.success) setOrder(data.order);
-      else toast.error("Order not found");
+      const res = await fetch(
+        `http://localhost:5000/api/orders/order-history/order/${id}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setOrderHistory(data.history);
+      } else {
+        toast.error("Order history not found");
+      }
     } catch {
       toast.error("Failed to load invoice");
     } finally {
@@ -38,7 +38,9 @@ export default function InvoicePage() {
   };
 
   if (loading) return <p>Loading...</p>;
-  if (!order) return <p>No order found</p>;
+  if (!orderHistory.length) return <p>No order history found</p>;
+
+  const orderInfo = orderHistory[0]; // common data for invoice
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -60,52 +62,53 @@ export default function InvoicePage() {
 
       {/* Invoice Details */}
       <h2 className="text-2xl font-semibold mb-4">
-        Invoice Number - {order.orderId}
+        Invoice Number - {orderInfo.orderId}
       </h2>
-      <p>Customer Name : {order.Bill?.fullName}</p>
-<p>Customer Email Id: {order.Bill?.email}</p>
-<p>Customer Phone Number: {order.Bill?.phoneNo}</p>
-<p>
-  Customer Address:{" "}
-  {[order.Bill?.addressLine1, order.Bill?.addressLine2].filter(Boolean).join(", ")}
-</p>
+      <p>Customer Name : {orderInfo.fullName}</p>
+      <p>Customer Email Id: {orderInfo.email}</p>
+      <p>Customer Phone Number: {orderInfo.phoneNo}</p>
+      <p>
+        Customer Address:{" "}
+        {[orderInfo.addressLine1, orderInfo.addressLine2]
+          .filter(Boolean)
+          .join(", ")}
+      </p>
 
-<h3 className="mt-6 text-xl font-semibold">Items</h3>
-<table className="w-full border mt-2">
-  <thead>
-    <tr className="bg-gray-100">
-      <th className="p-2 border">Product Image</th>
-      <th className="p-2 border">Product Name</th>
-      <th className="p-2 border">Product Qty</th>
-      <th className="p-2 border">Product Price</th>
-    </tr>
-  </thead>
-  <tbody>
-    {order.OrderSlots?.map((item: any) => (
-      <tr key={item.id}>
-        <td className="p-2 border">
-          {item.product_variant_image ? (
-            <img
-              src={`http://localhost:5000/uploads/${item.product_variant_image}`}
-              alt={item.productname}
-              className="w-16 h-16 object-cover rounded cursor-pointer"
-              onClick={() => setSelectedProduct(item)}
-            />
-          ) : (
-            "No Image"
-          )}
-        </td>
-        <td className="p-2 border">{item.productname}</td>
-        <td className="p-2 border">{item.quantity}</td>
-        <td className="p-2 border">₹{item.product_price}</td>
-        
-      </tr>
-    ))}
-  </tbody>
-</table>
+      <h3 className="mt-6 text-xl font-semibold">Items</h3>
+      <table className="w-full border mt-2">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="p-2 border">Product Image</th>
+            <th className="p-2 border">Product Name</th>
+            <th className="p-2 border">Product Qty</th>
+            <th className="p-2 border">Product Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orderHistory.map((item: any, i: number) => (
+            <tr key={i}>
+              <td className="p-2 border">
+                {item.product_variant_image ? (
+                  <img
+                    src={`http://localhost:5000/uploads/${item.product_variant_image}`}
+                    alt={item.productname}
+                    className="w-16 h-16 object-cover rounded cursor-pointer"
+                    onClick={() => setSelectedProduct(item)}
+                  />
+                ) : (
+                  "No Image"
+                )}
+              </td>
+              <td className="p-2 border">{item.productname}</td>
+              <td className="p-2 border">{item.quantity}</td>
+              <td className="p-2 border">₹{item.total_price}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <p className="mt-4 font-semibold">
-        Grand Total: ₹{order.grand_total_amount}
+        Grand Total: ₹{orderInfo.grandTotalAmount}
       </p>
 
       {/* Product Details Modal */}
@@ -118,7 +121,7 @@ export default function InvoicePage() {
             >
               ✕
             </button>
-            <ProductDetailsPage product={selectedProduct} /> {/* 👈 pass snapshot */}
+            <ProductDetailsPage product={selectedProduct} />{" "}
           </div>
         </div>
       )}

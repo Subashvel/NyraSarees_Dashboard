@@ -128,7 +128,7 @@ export default function OutForDeliveryOrders() {
                 </td>
                 <td className="px-4 py-2">
   <a
-    href={`${window.location.origin}/invoice/${o.id}`}
+    href={`${window.location.origin}/invoice/${o.orderId}`}
     target="_blank"
     rel="noopener noreferrer"
     className="bg-blue-500 text-white px-3 py-1 rounded text-sm"

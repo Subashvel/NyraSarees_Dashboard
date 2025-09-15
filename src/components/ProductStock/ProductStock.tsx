@@ -86,48 +86,46 @@ export default function ProductStock() {
   };
 
   const handleSubmit = async () => {
-  if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
-    setError("Enter a valid quantity");
-    return;
-  }
-
-  try {
-    if (modalType === "add" && selectedVariant) {
-      await addStock(selectedVariant.productVariantId, Number(quantity));
-      toast.success("Stock added successfully!");
-    } else if (modalType === "reduce" && selectedVariant) {
-      await reduceStock(selectedVariant.productVariantId, Number(quantity));
-      toast.success("Stock reduced successfully!");
+    if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
+      setError("Enter a valid quantity");
+      return;
     }
 
-    // Refresh stock list
-    const res = await fetch("http://localhost:5000/api/product-stock");
-const stockJson = await res.json();
+    try {
+      if (modalType === "add" && selectedVariant) {
+        await addStock(selectedVariant.productVariantId, Number(quantity));
+        toast.success("Stock added successfully!");
+      } else if (modalType === "reduce" && selectedVariant) {
+        await reduceStock(selectedVariant.productVariantId, Number(quantity));
+        toast.success("Stock reduced successfully!");
+      }
 
-const stockArray = Array.isArray(stockJson)
-  ? stockJson
-  : stockJson.data || [];
+      // Refresh stock list
+      const res = await fetch("http://localhost:5000/api/product-stock");
+      const stockJson = await res.json();
+      const stockArray = Array.isArray(stockJson)
+        ? stockJson
+        : stockJson.data || [];
 
-setVariants((prev) =>
-  prev.map((v) => {
-    const updatedStock = stockArray.find(
-      (s: Stock) => s.productVariantId === v.productVariantId
-    );
-    return {
-      ...v,
-      stock: updatedStock ? updatedStock.availableStock : v.stock,
-      soldStock: updatedStock ? updatedStock.soldStock : v.soldStock,
-    };
-  })
-);
+      setVariants((prev) =>
+        prev.map((v) => {
+          const updatedStock = stockArray.find(
+            (s: Stock) => s.productVariantId === v.productVariantId
+          );
+          return {
+            ...v,
+            stock: updatedStock ? updatedStock.availableStock : v.stock,
+            soldStock: updatedStock ? updatedStock.soldStock : v.soldStock,
+          };
+        })
+      );
 
-    closeModal();
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to update stock");
-  }
-};
-
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update stock");
+    }
+  };
 
   if (loading) return <p>Loading...</p>;
 
@@ -153,22 +151,20 @@ setVariants((prev) =>
                 <td className="p-2 border">{variant.categoryName}</td>
                 <td className="p-2 border">{variant.productName}</td>
                 <td className="p-2 border text-center">{variant.stock ?? 0}</td>
-                <td className="p-2 border text-center">
-                  {variant.soldStock ?? 0}
-                </td>
+                <td className="p-2 border text-center">{variant.soldStock ?? 0}</td>
                 <td className="p-2 border flex gap-2">
                   <button
-  onClick={() => openModal(variant, "add")}
-  className="bg-green-500 text-white px-2 py-1 rounded"
->
-  + Add
-</button>
-                  
+                    onClick={() => openModal(variant, "add")}
+                    className="bg-green-500 text-white px-2 py-1 rounded"
+                  >
+                    + Add
+                  </button>
+
                   <button
-  onClick={() => openModal(variant, "reduce")}
-  className="bg-red-500 text-white px-2 py-1 rounded"
->
-  - Reduce
+                    onClick={() => openModal(variant, "reduce")}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    - Reduce
                   </button>
                 </td>
               </tr>
@@ -185,7 +181,7 @@ setVariants((prev) =>
 
       {/* Modal */}
       {isModalOpen && selectedVariant && (
-        <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 sss">
+        <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded p-6 w-[400px]">
             <h3 className="text-lg font-semibold mb-4">
               {modalType === "add" ? "Add Stock" : "Reduce Stock"}
@@ -206,31 +202,31 @@ setVariants((prev) =>
             <div className="mb-3">
               <label className="block font-medium">Stock Quantity*</label>
               <input
-  type="text" // keep as text to allow alphabet detection
-  value={quantity}
-  onChange={(e) => {
-    const value = e.target.value;
-    setQuantity(value);
+                type="text"
+                value={quantity}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setQuantity(value);
 
-    // Inline Validation
-    if (!value) {
-      setError("Stock Quantity is required");
-    } else if (!/^\d+$/.test(value)) {
-      setError("Stock Quantity should only be number");
-    } else if (
-      modalType === "reduce" &&
-      selectedVariant &&
-      parseInt(value) > (selectedVariant.stock ?? 0)
-    ) {
-      setError("Stock Quantity should not be more than Available stock");
-    } else {
-      setError("");
-    }
-  }}
-  className="border w-full p-2 rounded"
-/>
-{error && <p className="text-red-500 text-sm">{error}</p>}
-
+                  if (!value) {
+                    setError("Stock Quantity is required");
+                  } else if (!/^\d+$/.test(value)) {
+                    setError("Stock Quantity should only be number");
+                  } else if (
+                    modalType === "reduce" &&
+                    selectedVariant &&
+                    parseInt(value) > (selectedVariant.stock ?? 0)
+                  ) {
+                    setError(
+                      "Stock Quantity should not be more than Available stock"
+                    );
+                  } else {
+                    setError("");
+                  }
+                }}
+                className="border w-full p-2 rounded"
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
             </div>
 
             <div className="flex justify-end gap-2">
@@ -244,7 +240,9 @@ setVariants((prev) =>
                 onClick={handleSubmit}
                 className="px-4 py-2 rounded bg-blue-500 text-white"
               >
-                {modalType === "add" ? "Add Quantity" : "Reduce Quantity"}
+                {modalType === "add"
+                  ? "Add Quantity"
+                  : "Reduce Quantity"}
               </button>
             </div>
           </div>
