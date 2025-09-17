@@ -168,6 +168,8 @@ export default function ProductComponents() {
     });
     setProductImage(null);
     setImagePreview(product.productImage || null);
+
+    
     setShowModal(true);
   };
 
@@ -273,13 +275,14 @@ export default function ProductComponents() {
   }
 
   // 🔹 Check variant existence
-  if (!variants.length) {
-    setErrors((prev) => ({
-      ...prev,
-      productName: "At least one variant is required",
-    }));
-    return;
-  }
+  if (!editingProduct && !variants.length) {
+  setErrors((prev) => ({
+    ...prev,
+    productName: "At least one variant is required",
+  }));
+  return;
+}
+
 
   // 🔹 Validate Variants
   for (const variant of variants) {
